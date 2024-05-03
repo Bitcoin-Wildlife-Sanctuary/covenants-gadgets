@@ -1,4 +1,4 @@
-use bitvm::pseudo::{OP_16MUL, OP_4MUL};
+use bitvm::pseudo::OP_256MUL;
 use bitvm::treepp::*;
 
 pub struct CppInt32Gadget;
@@ -66,115 +66,57 @@ impl CppUInt64Gadget {
         }
     }
 
-    pub fn from_u64_in_30bit_limbs() -> Script {
+    pub fn from_u64_in_16bit_limbs() -> Script {
         script! {
-            // stack:
-            //   top 4 bits
-            //   mid 30 bits
-            //   lower 30 bits
+            OP_SWAP OP_DUP 32768 OP_GREATERTHANOREQUAL OP_IF
+                32768 OP_SUB { 1 }
+            OP_ELSE
+                { 0 }
+            OP_ENDIF
+            OP_TOALTSTACK
+            OP_256MUL
+            OP_256MUL
+            OP_ADD
 
-            // remove the top 6 bits of the lower 30 bits
-            for i in 0..6 {
-                { 1 << (29 - i) }
-                OP_2DUP OP_GREATERTHANOREQUAL OP_IF
-                    OP_SUB 1
-                OP_ELSE
-                    OP_DROP 0
-                OP_ENDIF
-                OP_TOALTSTACK
-            }
-
-            // reshape it to 3 bytes
-            OP_SIZE 3 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
+            OP_SIZE 2 OP_LESSTHAN OP_IF OP_PUSHBYTES_2 OP_PUSHBYTES_0 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
             OP_SIZE 3 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
             OP_SIZE 3 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
 
-            // move the third limb away
-            OP_ROT
+            OP_FROMALTSTACK
+            OP_IF
+                OP_SIZE 4 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_LEFT OP_CAT
+                OP_ELSE OP_NEGATE OP_ENDIF
+            OP_ELSE
+                OP_SIZE 4 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
+            OP_ENDIF
 
-            OP_FROMALTSTACK OP_FROMALTSTACK
-            OP_FROMALTSTACK OP_FROMALTSTACK
-            OP_FROMALTSTACK OP_FROMALTSTACK
+            OP_TOALTSTACK
 
-            OP_DUP OP_ADD OP_ADD
-            OP_DUP OP_ADD OP_ADD
-            OP_DUP OP_ADD OP_ADD
-            OP_DUP OP_ADD OP_ADD
-            OP_DUP OP_ADD OP_ADD
+            OP_SWAP OP_DUP 32768 OP_GREATERTHANOREQUAL OP_IF
+                32768 OP_SUB { 1 }
+            OP_ELSE
+                { 0 }
+            OP_ENDIF
+            OP_TOALTSTACK
+            OP_256MUL
+            OP_256MUL
+            OP_ADD
 
-            // stack:
-            //   lower 24 bits as 3 bytes
-            //   top 4 bits
-            //   mid 30 bits
-            //   the top 6 bits combined
+            OP_SIZE 2 OP_LESSTHAN OP_IF OP_PUSHBYTES_2 OP_PUSHBYTES_0 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
+            OP_SIZE 3 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
+            OP_SIZE 3 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
 
+            OP_FROMALTSTACK
+            OP_IF
+                OP_SIZE 4 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_LEFT OP_CAT
+                OP_ELSE OP_NEGATE OP_ENDIF
+            OP_ELSE
+                OP_SIZE 4 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
+            OP_ENDIF
+
+            OP_FROMALTSTACK
             OP_SWAP
-
-            // remove the top 4 bits of the mid 30 bits
-            { 1 << 29 }
-            OP_2DUP OP_GREATERTHANOREQUAL OP_IF
-                OP_SUB 1
-            OP_ELSE
-                OP_DROP 0
-            OP_ENDIF
-            OP_TOALTSTACK
-
-            { 1 << 28 }
-            OP_2DUP OP_GREATERTHANOREQUAL OP_IF
-                OP_SUB 1
-            OP_ELSE
-                OP_DROP 0
-            OP_ENDIF
-            OP_TOALTSTACK
-
-            { 1 << 27 }
-            OP_2DUP OP_GREATERTHANOREQUAL OP_IF
-                OP_SUB 1
-            OP_ELSE
-                OP_DROP 0
-            OP_ENDIF
-            OP_TOALTSTACK
-
-            { 1 << 26 }
-            OP_2DUP OP_GREATERTHANOREQUAL OP_IF
-                OP_SUB 1
-            OP_ELSE
-                OP_DROP 0
-            OP_ENDIF
-            OP_TOALTSTACK
-
-            OP_4MUL
-            OP_ROT
-            OP_DUP OP_ADD OP_ADD OP_ADD
-
-            // reshape it to 4 bytes
-            { CppInt32Gadget::from_positive_bitcoin_integer() }
-
-            OP_ROT
-
-            OP_FROMALTSTACK OP_FROMALTSTACK
-            OP_FROMALTSTACK OP_FROMALTSTACK
-
-            // stack:
-            //   lower 28 bits as 4 bytes
-            //   mid 26 bits + lower 2 bits as 4 bytes
-            //   top 4 bits
-            //   mid top bit
-            //   mid top - 1 bit
-            //   mid top - 2 bit
-            //   mid top - 3 bit
-
-            OP_DUP OP_ADD OP_ADD
-            OP_DUP OP_ADD OP_ADD
-            OP_DUP OP_ADD OP_ADD
-            OP_SWAP OP_16MUL OP_ADD
-
-            // reshape it to 4 bytes
-            { CppInt32Gadget::from_positive_bitcoin_integer() }
-
-            OP_ROT
-
-            OP_CAT OP_CAT
+            OP_CAT
         }
     }
 }
@@ -182,8 +124,7 @@ impl CppUInt64Gadget {
 #[cfg(test)]
 mod test {
     use crate::cpp_integer::{CppInt32Gadget, CppUInt64Gadget};
-    use crate::U64;
-    use bitcoin::opcodes::all::{OP_EQUAL, OP_PUSHBYTES_0, OP_PUSHBYTES_7};
+    use bitvm::bigint::U64;
     use bitvm::treepp::*;
 
     #[test]
@@ -315,28 +256,30 @@ mod test {
     }
 
     #[test]
-    fn test_cpp_uint64_from_u64_in_30bit_limbs() {
+    fn test_cpp_uint64_from_u64_in_16bit_limbs() {
         let mut script = script! {
-            { U64::push_dec("1000000000000000000") }
-            { U64::push_dec("1234") }
-            { U64::push_dec("5678") }
+            { U64::push_u64_le(&[100_000_000u64]) }
+            { U64::push_u64_le(&[1234]) }
+            { U64::push_u64_le(&[5678]) }
 
-            OP_ROT
-
+            { U64::toaltstack() }
             { U64::mul() }
+
+            { U64::fromaltstack() }
             { U64::add(1, 0) }
 
-            { CppUInt64Gadget::from_u64_in_30bit_limbs() }
-            OP_RETURN
+            { CppUInt64Gadget::from_u64_in_16bit_limbs() }
         }
         .to_bytes();
-        /*script.extend_from_slice(&[0x08, 0x2e, 0x16, 0x08, 0xe0, 0xfc, 0xad, 0x30, 0xe5, 0x42]);
-        script.extend_from_slice(script! {
-            OP_EQUAL
-        }.as_bytes());*/
+        script.extend_from_slice(&[0x08, 0x2e, 0xa8, 0x36, 0xbb, 0x1c, 0x00, 0x00, 0x00]);
+        script.extend_from_slice(
+            script! {
+                OP_EQUAL
+            }
+            .as_bytes(),
+        );
 
         let res = execute_script(Script::from_bytes(script));
-        println!("{:8}", res.final_stack);
         assert!(res.success);
     }
 }
