@@ -9,6 +9,8 @@ bitcoin-script = { git = "https://github.com/BitVM/rust-bitcoin-script" }
 bitcoin-scriptexec = { git = "https://github.com/BitVM/rust-bitcoin-scriptexec" }
 bitvm = { git = "https://github.com/BitVM/BitVM" }
 rand = "0.8.5"
+rand_chacha = "0.3.1"
+sha2 = "0.10.8"
 
 [profile.dev]
 opt-level = 3
