@@ -1,3 +1,4 @@
+use crate::internal_structures::variable_length_integer::VariableLengthIntegerGadget;
 use bitcoin::opcodes::all::{
     OP_PUSHBYTES_20, OP_PUSHBYTES_22, OP_PUSHBYTES_32, OP_PUSHBYTES_34, OP_PUSHNUM_1,
 };
@@ -15,14 +16,6 @@ pub enum ScriptPubKeyType {
     P2WPKH,
     P2WSH,
     P2TR,
-}
-
-pub const fn script_pub_key_len(script_pub_key_type: ScriptPubKeyType) -> usize {
-    match script_pub_key_type {
-        ScriptPubKeyType::P2WPKH => 2 + 20,
-        ScriptPubKeyType::P2WSH => 2 + 32,
-        ScriptPubKeyType::P2TR => 2 + 32,
-    }
 }
 
 pub struct ScriptPubKeyGadget;
@@ -66,21 +59,46 @@ impl ScriptPubKeyGadget {
 
     pub fn from_constant(script_pub_key: &ScriptPubKey) -> Script {
         match script_pub_key {
-            ScriptPubKey::P2WPKH(pkhash) => ScriptPubKeyGadget::p2wpkh_from_constant_hash(pkhash),
-            ScriptPubKey::P2WSH(script_hash) => {
-                ScriptPubKeyGadget::p2wsh_from_constant_hash(script_hash)
-            }
-            ScriptPubKey::P2TR(public_key) => ScriptPubKeyGadget::p2tr_from_public_key(public_key),
+            ScriptPubKey::P2WPKH(pkhash) => script! {
+                { VariableLengthIntegerGadget::from_constant(22) }
+                { ScriptPubKeyGadget::p2wpkh_from_constant_hash(pkhash) }
+                OP_CAT
+            },
+            ScriptPubKey::P2WSH(script_hash) => script! {
+                { VariableLengthIntegerGadget::from_constant(34) }
+                { ScriptPubKeyGadget::p2wsh_from_constant_hash(script_hash) }
+                OP_CAT
+            },
+            ScriptPubKey::P2TR(public_key) => script! {
+                { VariableLengthIntegerGadget::from_constant(34) }
+                { ScriptPubKeyGadget::p2tr_from_public_key(public_key) }
+                OP_CAT
+            },
+        }
+    }
+
+    pub fn from_provided(script_pub_key_type: ScriptPubKeyType) -> Script {
+        match script_pub_key_type {
+            ScriptPubKeyType::P2WPKH => script! {
+                OP_DUP OP_SIZE 20 OP_EQUALVERIFY
+                OP_PUSHBYTES_1 OP_PUSHBYTES_22 OP_SWAP OP_CAT
+            },
+            ScriptPubKeyType::P2WSH => script! {
+                OP_DUP OP_SIZE 32 OP_EQUALVERIFY
+                OP_PUSHBYTES_1 OP_PUSHBYTES_34 OP_SWAP OP_CAT
+            },
+            ScriptPubKeyType::P2TR => script! {
+                OP_DUP OP_SIZE 32 OP_EQUALVERIFY
+                OP_PUSHBYTES_1 OP_PUSHBYTES_34 OP_SWAP OP_CAT
+            },
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::script_pub_key::{
-        script_pub_key_len, ScriptPubKey, ScriptPubKeyGadget, ScriptPubKeyType,
-    };
-    use crate::tx_out::TxOutGadget;
+    use crate::structures::script_pub_key::{ScriptPubKey, ScriptPubKeyGadget};
+    use crate::utils::pseudo::OP_CAT3;
     use bitcoin::consensus::Encodable;
     use bitcoin::hashes::Hash;
     use bitcoin::key::TweakedPublicKey;
@@ -133,17 +151,10 @@ mod test {
             };
 
             let script = script! {
-                { TxOutGadget::step_2_add_constant_vi(script_pub_key_len(ScriptPubKeyType::P2WPKH)) }
                 { ScriptPubKeyGadget::from_constant(&script_pub_key_1) }
-                { TxOutGadget::step_2_add_constant_vi(script_pub_key_len(ScriptPubKeyType::P2WSH)) }
                 { ScriptPubKeyGadget::from_constant(&script_pub_key_2) }
-                { TxOutGadget::step_2_add_constant_vi(script_pub_key_len(ScriptPubKeyType::P2TR)) }
                 { ScriptPubKeyGadget::from_constant(&script_pub_key_3) }
-                OP_CAT
-                OP_CAT
-                OP_CAT
-                OP_CAT
-                OP_CAT
+                OP_CAT3
                 OP_SHA256
 
                 { expected }
@@ -151,8 +162,6 @@ mod test {
             };
 
             let exec_result = execute_script(script);
-            println!("{:8}", exec_result.final_stack);
-            println!("{:?}", exec_result.error);
             assert!(exec_result.success);
         }
     }

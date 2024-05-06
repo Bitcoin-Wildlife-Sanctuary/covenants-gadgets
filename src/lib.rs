@@ -1,13 +1,9 @@
 pub mod internal_structures;
 
+pub mod structures;
+
 pub mod wizards;
 
-pub mod cpp_integer;
-
-pub mod variable_integer;
+pub mod utils;
 
 pub mod schnorr_trick;
-
-pub mod tx_out;
-
-pub mod script_pub_key;

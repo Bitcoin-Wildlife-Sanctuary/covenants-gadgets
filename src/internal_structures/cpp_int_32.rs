@@ -39,3 +39,106 @@ impl CppInt32Gadget {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::internal_structures::cpp_int_32::CppInt32Gadget;
+    use crate::utils::push_u32_4bytes;
+    use bitvm::treepp::*;
+
+    #[test]
+    fn test_cpp_int32_from_bitcoin_integer() {
+        let v = 0x12;
+        let script = script! {
+            { v }
+            { CppInt32Gadget::from_bitcoin_integer() }
+            { push_u32_4bytes(0x12) }
+            OP_EQUAL
+        };
+        let res = execute_script(script);
+        assert!(res.success);
+
+        let v = 0x1234;
+        let script = script! {
+            { v }
+            { CppInt32Gadget::from_bitcoin_integer() }
+            { push_u32_4bytes(0x1234) }
+            OP_EQUAL
+        };
+        let res = execute_script(script);
+        assert!(res.success);
+
+        let v = 0x123456;
+        let script = script! {
+            { v }
+            { CppInt32Gadget::from_bitcoin_integer() }
+            { push_u32_4bytes(0x123456) }
+            OP_EQUAL
+        };
+        let res = execute_script(script);
+        assert!(res.success);
+
+        let v = 0x12345678;
+        let script = script! {
+            { v }
+            { CppInt32Gadget::from_bitcoin_integer() }
+            { push_u32_4bytes(0x12345678) }
+            OP_EQUAL
+        };
+        let res = execute_script(script);
+        assert!(res.success);
+
+        let v = 0x78345612;
+        let script = script! {
+            { v }
+            { CppInt32Gadget::from_bitcoin_integer() }
+            { push_u32_4bytes(0x78345612) }
+            OP_EQUAL
+        };
+        let res = execute_script(script);
+        assert!(res.success);
+    }
+
+    #[test]
+    fn test_cpp_int32_from_positive_bitcoin_integer() {
+        let v = 0x12;
+        let script = script! {
+            { v }
+            { CppInt32Gadget::from_positive_bitcoin_integer() }
+            { push_u32_4bytes(0x12) }
+            OP_EQUAL
+        };
+        let res = execute_script(script);
+        assert!(res.success);
+
+        let v = 0x1234;
+        let script = script! {
+            { v }
+            { CppInt32Gadget::from_positive_bitcoin_integer() }
+            { push_u32_4bytes(0x1234) }
+            OP_EQUAL
+        };
+        let res = execute_script(script);
+        assert!(res.success);
+
+        let v = 0x123456;
+        let script = script! {
+            { v }
+            { CppInt32Gadget::from_positive_bitcoin_integer() }
+            { push_u32_4bytes(0x123456) }
+            OP_EQUAL
+        };
+        let res = execute_script(script);
+        assert!(res.success);
+
+        let v = 0x12345678;
+        let script = script! {
+            { v }
+            { CppInt32Gadget::from_positive_bitcoin_integer() }
+            { push_u32_4bytes(0x12345678) }
+            OP_EQUAL
+        };
+        let res = execute_script(script);
+        assert!(res.success);
+    }
+}

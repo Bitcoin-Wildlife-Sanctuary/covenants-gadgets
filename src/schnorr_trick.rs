@@ -1,4 +1,5 @@
 use crate::internal_structures::cpp_int_32::CppInt32Gadget;
+use crate::structures::hashtype::HashTypeGadget;
 use bitcoin::absolute::LockTime;
 use bitcoin::opcodes::all::OP_PUSHBYTES_4;
 use bitcoin::transaction::Version;
@@ -15,56 +16,11 @@ impl SchnorrTrickGadget {
     }
 
     pub fn step_2_add_constant_hash_type(hash_type: TapSighashType) -> Script {
-        match hash_type {
-            TapSighashType::Default => {
-                script! {
-                    OP_PUSHBYTES_1 OP_PUSHBYTES_0
-                }
-            }
-            TapSighashType::All => {
-                script! {
-                    OP_PUSHBYTES_1 OP_PUSHBYTES_1
-                }
-            }
-            TapSighashType::None => {
-                script! {
-                    OP_PUSHBYTES_1 OP_PUSHBYTES_2
-                }
-            }
-            TapSighashType::Single => {
-                script! {
-                    OP_PUSHBYTES_1 OP_PUSHBYTES_3
-                }
-            }
-            TapSighashType::AllPlusAnyoneCanPay => {
-                script! {
-                    OP_PUSHBYTES_1 OP_RIGHT
-                }
-            }
-            TapSighashType::NonePlusAnyoneCanPay => {
-                script! {
-                    OP_PUSHBYTES_1 OP_SIZE
-                }
-            }
-            TapSighashType::SinglePlusAnyoneCanPay => {
-                script! {
-                    OP_PUSHBYTES_1 OP_INVERT
-                }
-            }
-        }
+        HashTypeGadget::from_constant(hash_type)
     }
 
     pub fn step_2_check_provided_hash_type() -> Script {
-        script! {
-            OP_DUP OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_EQUAL
-            OP_OVER OP_PUSHBYTES_1 OP_PUSHBYTES_1 OP_EQUAL OP_BOOLOR
-            OP_OVER OP_PUSHBYTES_1 OP_PUSHBYTES_2 OP_EQUAL OP_BOOLOR
-            OP_OVER OP_PUSHBYTES_1 OP_PUSHBYTES_3 OP_EQUAL OP_BOOLOR
-            OP_OVER OP_PUSHBYTES_1 OP_RIGHT OP_EQUAL OP_BOOLOR
-            OP_OVER OP_PUSHBYTES_1 OP_SIZE OP_EQUAL OP_BOOLOR
-            OP_OVER OP_PUSHBYTES_1 OP_INVERT OP_EQUAL OP_BOOLOR
-            OP_VERIFY
-        }
+        HashTypeGadget::from_provided()
     }
 
     pub fn step_3_add_constant_nversion(version: Version) -> Script {
