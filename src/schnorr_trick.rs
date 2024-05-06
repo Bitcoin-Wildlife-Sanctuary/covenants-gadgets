@@ -1,4 +1,4 @@
-use crate::cpp_integer::CppInt32Gadget;
+use crate::internal_structures::cpp_int_32::CppInt32Gadget;
 use bitcoin::absolute::LockTime;
 use bitcoin::opcodes::all::OP_PUSHBYTES_4;
 use bitcoin::transaction::Version;

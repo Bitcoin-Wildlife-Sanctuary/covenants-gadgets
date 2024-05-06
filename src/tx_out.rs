@@ -13,18 +13,7 @@ pub struct TxOutGadget;
 impl TxOutGadget {
     pub fn step_1_add_constant_value(value: Amount) -> Script {
         let v = value.to_sat();
-
-        Script::from_bytes(vec![
-            OP_PUSHBYTES_8.to_u8(),
-            (v & 0xff) as u8,
-            ((v >> 8) & 0xff) as u8,
-            ((v >> 16) & 0xff) as u8,
-            ((v >> 24) & 0xff) as u8,
-            ((v >> 32) & 0xff) as u8,
-            ((v >> 40) & 0xff) as u8,
-            ((v >> 48) & 0xff) as u8,
-            ((v >> 56) & 0xff) as u8,
-        ])
+        CppUInt64Gadget::from_constant(v)
     }
 
     pub fn step_1_add_provided_u64() -> Script {
@@ -73,13 +62,7 @@ impl TxOutGadget {
     }
 
     pub fn step_3_add_constant_script_pub_key(script_pub_key: &ScriptPubKey) -> Script {
-        match script_pub_key {
-            ScriptPubKey::P2WPKH(pkhash) => ScriptPubKeyGadget::p2wpkh_from_constant_hash(pkhash),
-            ScriptPubKey::P2WSH(script_hash) => {
-                ScriptPubKeyGadget::p2wsh_from_constant_hash(script_hash)
-            }
-            ScriptPubKey::P2TR(public_key) => ScriptPubKeyGadget::p2tr_from_public_key(public_key),
-        }
+        ScriptPubKeyGadget::from_constant(script_pub_key)
     }
 
     pub fn step_3_add_provided_script_pub_key(script_pub_key_type: ScriptPubKeyType) -> Script {
@@ -113,7 +96,7 @@ mod test {
     use sha2::{Digest, Sha256};
 
     #[test]
-    fn test_tx_out() {
+    fn test_sha_prevouts() {
         let mut prng = ChaCha20Rng::seed_from_u64(0);
 
         for _ in 0..10 {

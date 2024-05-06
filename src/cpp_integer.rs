@@ -1,49 +1,26 @@
+use bitcoin::opcodes::all::OP_PUSHBYTES_8;
 use bitvm::pseudo::OP_256MUL;
 use bitvm::treepp::*;
 
-pub struct CppInt32Gadget;
-
-impl CppInt32Gadget {
-    pub fn from_bitcoin_integer() -> Script {
-        script! {
-            OP_DUP OP_ABS
-            // stack: x abs(x)
-
-            OP_SIZE 4 OP_LESSTHAN
-            OP_IF
-                // stack: abs(x) x abs(x)
-                OP_DUP OP_ROT
-                OP_EQUAL OP_TOALTSTACK
-
-                // stack: abs(a), altstack: is_positive
-                OP_SIZE 2 OP_LESSTHAN OP_IF OP_PUSHBYTES_2 OP_PUSHBYTES_0 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
-                OP_SIZE 3 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
-
-                OP_FROMALTSTACK
-                OP_IF
-                    OP_PUSHBYTES_1 OP_PUSHBYTES_0
-                OP_ELSE
-                    OP_PUSHBYTES_1 OP_LEFT
-                OP_ENDIF
-                OP_CAT
-            OP_ELSE
-                OP_DROP // abs doesn't change the number of bytes of the representation
-            OP_ENDIF
-        }
-    }
-
-    pub fn from_positive_bitcoin_integer() -> Script {
-        script! {
-            OP_SIZE 3 OP_LESSTHAN OP_IF OP_PUSHBYTES_2 OP_PUSHBYTES_0 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
-            OP_SIZE 4 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
-            OP_SIZE 4 OP_LESSTHAN OP_IF OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_CAT OP_ENDIF
-        }
-    }
-}
+pub type AmountGadget = CppUInt64Gadget;
 
 pub struct CppUInt64Gadget;
 
 impl CppUInt64Gadget {
+    pub fn from_constant(v: u64) -> Script {
+        Script::from_bytes(vec![
+            OP_PUSHBYTES_8.to_u8(),
+            (v & 0xff) as u8,
+            ((v >> 8) & 0xff) as u8,
+            ((v >> 16) & 0xff) as u8,
+            ((v >> 24) & 0xff) as u8,
+            ((v >> 32) & 0xff) as u8,
+            ((v >> 40) & 0xff) as u8,
+            ((v >> 48) & 0xff) as u8,
+            ((v >> 56) & 0xff) as u8,
+        ])
+    }
+
     pub fn from_bitcoin_integer() -> Script {
         script! {
             // sanity check: input must be greater or equal to zero
@@ -123,9 +100,16 @@ impl CppUInt64Gadget {
 
 #[cfg(test)]
 mod test {
-    use crate::cpp_integer::{CppInt32Gadget, CppUInt64Gadget};
+    use crate::cpp_integer::{AmountGadget, CppUInt64Gadget};
+    use crate::internal_structures::cpp_int_32::CppInt32Gadget;
+    use bitcoin::consensus::Encodable;
+    use bitcoin::Amount;
     use bitvm::bigint::U64;
     use bitvm::treepp::*;
+    use rand::{RngCore, SeedableRng};
+    use rand_chacha::ChaCha20Rng;
+    use sha2::digest::Update;
+    use sha2::{Digest, Sha256};
 
     #[test]
     fn test_cpp_int32_from_bitcoin_integer() {
@@ -281,5 +265,44 @@ mod test {
 
         let res = execute_script(Script::from_bytes(script));
         assert!(res.success);
+    }
+
+    #[test]
+    fn test_sha_amounts() {
+        let mut prng = ChaCha20Rng::seed_from_u64(0);
+
+        for _ in 0..10 {
+            let value_1 = Amount::from_sat(prng.next_u64());
+            let value_2 = Amount::from_sat(prng.next_u64());
+            let value_3 = Amount::from_sat(prng.next_u64());
+
+            let expected = {
+                let mut bytes = vec![];
+                value_1.consensus_encode(&mut bytes).unwrap();
+                value_2.consensus_encode(&mut bytes).unwrap();
+                value_3.consensus_encode(&mut bytes).unwrap();
+
+                let mut sha256 = Sha256::new();
+                Update::update(&mut sha256, &bytes);
+
+                let hash = sha256.finalize().to_vec();
+                hash
+            };
+
+            let script = script! {
+                { AmountGadget::from_constant(value_1.to_sat()) }
+                { AmountGadget::from_constant(value_2.to_sat()) }
+                OP_CAT
+                { AmountGadget::from_constant(value_3.to_sat()) }
+                OP_CAT
+                OP_SHA256
+
+                { expected }
+                OP_EQUAL
+            };
+
+            let exec_result = execute_script(script);
+            assert!(exec_result.success);
+        }
     }
 }

@@ -1,3 +1,7 @@
+pub mod internal_structures;
+
+pub mod wizards;
+
 pub mod cpp_integer;
 
 pub mod variable_integer;
