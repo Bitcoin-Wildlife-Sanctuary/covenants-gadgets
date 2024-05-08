@@ -1,5 +1,5 @@
 use crate::structures::hashtype::HashTypeGadget;
-use crate::structures::locktime::AbsoluteLockTimeGadget;
+use crate::structures::locktime::LockTimeGadget;
 use crate::structures::version::VersionGadget;
 use bitcoin::absolute::LockTime;
 use bitcoin::transaction::Version;
@@ -32,11 +32,11 @@ impl SchnorrTrickGadget {
     }
 
     pub fn step_4_add_constant_nlocktime(lock_time: LockTime) -> Script {
-        AbsoluteLockTimeGadget::from_constant(lock_time)
+        LockTimeGadget::from_constant_absolute(lock_time)
     }
 
     pub fn step_4_add_provided_nlocktime() -> Script {
-        AbsoluteLockTimeGadget::from_provided_block_number()
+        LockTimeGadget::from_provided_block_number()
     }
 
     pub fn step_5_cat_all_input_info() -> Script {

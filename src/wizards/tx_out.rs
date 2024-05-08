@@ -1,9 +1,9 @@
+use crate::utils::pseudo::OP_CAT2;
 use bitcoin::TxOut;
 use bitvm::treepp::*;
 
 pub use crate::structures::amount::AmountGadget as Step1AmountGadget;
 pub use crate::structures::script_pub_key::ScriptPubKeyGadget as Step2ScriptPubKeyGadget;
-use crate::utils::pseudo::OP_CAT2;
 
 pub struct TxOutGadget;
 

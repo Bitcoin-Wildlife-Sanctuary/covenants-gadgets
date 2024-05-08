@@ -1,9 +1,9 @@
+use crate::utils::pseudo::OP_CAT2;
 use bitcoin::OutPoint;
 use bitvm::treepp::*;
 
 pub use crate::internal_structures::cpp_int_32::CppInt32Gadget as Step2IndexGadget;
 pub use crate::structures::txid::TxIdGadget as Step1TxIdGadget;
-use crate::utils::pseudo::OP_CAT2;
 
 pub struct OutPointGadget;
 
