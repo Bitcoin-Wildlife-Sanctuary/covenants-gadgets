@@ -1,7 +1,7 @@
 use crate::internal_structures::cpp_int_32::CppInt32Gadget;
+use crate::utils::{push_u32_4bytes, push_u64_8bytes};
 use bitvm::pseudo::OP_256MUL;
 use bitvm::treepp::*;
-use crate::utils::{push_u32_4bytes, push_u64_8bytes};
 
 pub struct CppUInt64Gadget;
 
@@ -90,9 +90,9 @@ impl CppUInt64Gadget {
 #[cfg(test)]
 mod test {
     use crate::internal_structures::cpp_uint_64::CppUInt64Gadget;
+    use crate::utils::push_u64_8bytes;
     use bitvm::bigint::U64;
     use bitvm::treepp::*;
-    use crate::utils::push_u64_8bytes;
 
     #[test]
     fn test_cpp_uint64_from_bitcoin_integer() {

@@ -1,5 +1,10 @@
 pub mod amount;
 pub mod hashtype;
-pub mod script_pub_key;
-pub mod version;
+pub mod key_version;
 pub mod locktime;
+pub mod script_pub_key;
+pub mod sequence;
+pub mod spend_type;
+pub mod tap_leaf_hash;
+pub mod txid;
+pub mod version;

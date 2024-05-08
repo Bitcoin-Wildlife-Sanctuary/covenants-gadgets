@@ -3,6 +3,7 @@ use bitcoin::opcodes::all::{
     OP_PUSHBYTES_20, OP_PUSHBYTES_22, OP_PUSHBYTES_32, OP_PUSHBYTES_34, OP_PUSHNUM_1,
 };
 use bitcoin::opcodes::OP_0;
+use bitcoin::ScriptBuf;
 use bitvm::treepp::*;
 
 pub enum ScriptPubKey {
@@ -74,6 +75,14 @@ impl ScriptPubKeyGadget {
                 { ScriptPubKeyGadget::p2tr_from_public_key(public_key) }
                 OP_CAT
             },
+        }
+    }
+
+    pub fn from_constant_scriptbuf(script_buf: &ScriptBuf) -> Script {
+        script! {
+            { VariableLengthIntegerGadget::from_constant(script_buf.len()) }
+            { script_buf.to_bytes() }
+            OP_CAT
         }
     }
 

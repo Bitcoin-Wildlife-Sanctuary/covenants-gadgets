@@ -1,8 +1,13 @@
+use crate::utils::push_u32_4bytes;
 use bitvm::treepp::*;
 
 pub struct CppInt32Gadget;
 
 impl CppInt32Gadget {
+    pub fn from_constant(v: u32) -> Script {
+        push_u32_4bytes(v)
+    }
+
     pub fn from_bitcoin_integer() -> Script {
         script! {
             OP_DUP OP_ABS

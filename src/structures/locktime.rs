@@ -1,8 +1,8 @@
-use bitcoin::{absolute, relative};
-use bitcoin::relative::LockTime;
-use bitvm::treepp::*;
 use crate::internal_structures::cpp_int_32::CppInt32Gadget;
 use crate::utils::push_u32_4bytes;
+use bitcoin::relative::LockTime;
+use bitcoin::{absolute, relative};
+use bitvm::treepp::*;
 
 pub struct AbsoluteLockTimeGadget;
 

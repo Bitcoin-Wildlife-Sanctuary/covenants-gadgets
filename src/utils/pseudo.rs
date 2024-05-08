@@ -1,10 +1,12 @@
 #![allow(non_snake_case)]
 
-use bitcoin::opcodes::all::OP_CAT;
-use bitcoin::Opcode;
 use bitvm::treepp::*;
 
-pub const OP_CAT2: Opcode = OP_CAT;
+pub fn OP_CAT2() -> Script {
+    script! {
+        OP_CAT
+    }
+}
 
 pub fn OP_CAT3() -> Script {
     script! {
