@@ -21,3 +21,57 @@ impl TxInGadget {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::wizards::tx_in::TxInGadget;
+    use bitcoin::consensus::Encodable;
+    use bitcoin::hashes::Hash;
+    use bitcoin::{OutPoint, ScriptBuf, Sequence, TxIn, Txid, Witness};
+    use bitvm::treepp::*;
+    use rand::{Rng, SeedableRng};
+    use rand_chacha::ChaCha20Rng;
+    use sha2::Digest;
+
+    #[test]
+    fn test_tx_in() {
+        let mut prng = ChaCha20Rng::seed_from_u64(0);
+
+        for _ in 0..10 {
+            let outpoint = {
+                let mut engine = bitcoin::hashes::sha256::Hash::engine();
+                let r = prng.gen::<u32>();
+                r.consensus_encode(&mut engine).unwrap();
+                OutPoint::new(Txid::from_engine(engine), prng.gen::<u32>())
+            };
+
+            let seq = Sequence::from_512_second_intervals(prng.gen::<u16>());
+
+            let tx_in = TxIn {
+                previous_output: outpoint,
+                script_sig: ScriptBuf::new(),
+                sequence: seq,
+                witness: Witness::new(),
+            };
+
+            let expected = {
+                let mut bytes = vec![];
+                tx_in.consensus_encode(&mut bytes).unwrap();
+
+                let mut sha256 = sha2::Sha256::new();
+                Digest::update(&mut sha256, &bytes);
+
+                bytes
+            };
+
+            let script = script! {
+                { TxInGadget::from_constant(&tx_in) }
+                { expected }
+                OP_EQUAL
+            };
+
+            let exec_result = execute_script(script);
+            assert!(exec_result.success);
+        }
+    }
+}
