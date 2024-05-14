@@ -1,3 +1,4 @@
+pub mod ext;
 pub mod outpoint;
 pub mod tx;
 pub mod tx_in;

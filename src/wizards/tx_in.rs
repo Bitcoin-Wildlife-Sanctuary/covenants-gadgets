@@ -61,11 +61,12 @@ mod test {
                 let mut sha256 = sha2::Sha256::new();
                 Digest::update(&mut sha256, &bytes);
 
-                bytes
+                sha256.finalize().to_vec()
             };
 
             let script = script! {
                 { TxInGadget::from_constant(&tx_in) }
+                OP_SHA256
                 { expected }
                 OP_EQUAL
             };

@@ -1,5 +1,7 @@
 use bitcoin::consensus::Encodable;
-use bitcoin::opcodes::all::{OP_PUSHBYTES_1, OP_PUSHBYTES_3, OP_PUSHBYTES_5, OP_PUSHBYTES_9};
+use bitcoin::opcodes::all::{
+    OP_PUSHBYTES_1, OP_PUSHBYTES_3, OP_PUSHBYTES_5, OP_PUSHBYTES_9, OP_PUSHNUM_1,
+};
 use bitvm::treepp::*;
 
 pub struct VariableLengthIntegerGadget;
@@ -13,13 +15,15 @@ impl VariableLengthIntegerGadget {
         }
     }
 
-    pub fn from_constant(vi: usize) -> Script {
-        let vi = bitcoin::VarInt::from(vi as u64);
+    pub fn from_constant(v: usize) -> Script {
+        let vi = bitcoin::VarInt::from(v as u64);
 
         let mut bytes = vec![];
         vi.consensus_encode(&mut bytes).unwrap();
 
-        if vi.size() == 1 {
+        if v > 0 && v <= 16 {
+            Script::from_bytes(vec![OP_PUSHNUM_1.to_u8() + (v as u8 - 1)])
+        } else if vi.size() == 1 {
             Script::from_bytes(vec![OP_PUSHBYTES_1.to_u8(), bytes[0]])
         } else if vi.size() == 3 {
             Script::from_bytes(vec![OP_PUSHBYTES_3.to_u8(), bytes[0], bytes[1], bytes[2]])
