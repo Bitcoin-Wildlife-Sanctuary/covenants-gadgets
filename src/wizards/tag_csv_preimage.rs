@@ -258,6 +258,9 @@ mod test {
         let tap_leaf_hash = TapLeafHash::hash(&random_tap_data);
 
         let tx_preimage_expected = {
+            // based on the implementation of `taproot_encode_signing_data_to` in
+            // https://github.com/rust-bitcoin/rust-bitcoin/blob/master/bitcoin/src/crypto/sighash.rs#L581
+
             let mut bytes = vec![];
             let writer = &mut bytes;
 
