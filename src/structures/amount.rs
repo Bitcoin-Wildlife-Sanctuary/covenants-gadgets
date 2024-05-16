@@ -5,7 +5,7 @@ use bitvm::treepp::*;
 pub struct AmountGadget;
 
 impl AmountGadget {
-    pub fn from_constant(amount: Amount) -> Script {
+    pub fn from_constant(amount: &Amount) -> Script {
         CppUInt64Gadget::from_constant(amount.to_sat())
     }
 
@@ -57,9 +57,9 @@ mod test {
             };
 
             let script = script! {
-                { AmountGadget::from_constant(value_1) }
-                { AmountGadget::from_constant(value_2) }
-                { AmountGadget::from_constant(value_3) }
+                { AmountGadget::from_constant(&value_1) }
+                { AmountGadget::from_constant(&value_2) }
+                { AmountGadget::from_constant(&value_3) }
                 OP_CAT3
                 OP_SHA256
 

@@ -3,6 +3,7 @@ use bitcoin::TxOut;
 use bitvm::treepp::*;
 
 pub use crate::structures::amount::AmountGadget as Step1AmountGadget;
+
 pub use crate::structures::script_pub_key::ScriptPubKeyGadget as Step2ScriptPubKeyGadget;
 
 pub struct TxOutGadget;
@@ -10,8 +11,8 @@ pub struct TxOutGadget;
 impl TxOutGadget {
     pub fn from_constant(tx_out: &TxOut) -> Script {
         script! {
-            { Step1AmountGadget::from_constant(tx_out.value) }
-            { Step2ScriptPubKeyGadget::from_constant_scriptbuf(&tx_out.script_pubkey) }
+            { Step1AmountGadget::from_constant(&tx_out.value) }
+            { Step2ScriptPubKeyGadget::from_constant(&tx_out.script_pubkey) }
             OP_CAT2
         }
     }

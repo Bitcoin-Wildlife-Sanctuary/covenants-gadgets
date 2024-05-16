@@ -2,18 +2,24 @@ use crate::utils::pseudo::OP_CAT3;
 use bitcoin::TapLeafHash;
 use bitvm::treepp::*;
 
-pub use crate::structures::codesep_pos::CodeSepPosGadget as Step3CodeSepPosGadget;
-pub use crate::structures::key_version::KeyVersionGadget as Step2KeyVersionGadget;
 pub use crate::structures::tap_leaf_hash::TapLeafHashGadget as Step1TagLeafHashGadget;
+
+pub use crate::structures::key_version::KeyVersionGadget as Step2KeyVersionGadget;
+
+pub use crate::structures::codesep_pos::CodeSepPosGadget as Step3CodeSepPosGadget;
 
 pub struct ExtGadget;
 
 impl ExtGadget {
-    pub fn from_constant(tap_leaf_hash: &TapLeafHash, code_sep_pos: u32) -> Script {
+    pub fn from_constant(tap_leaf_hash: &TapLeafHash, code_sep_pos: Option<u32>) -> Script {
         script! {
             { Step1TagLeafHashGadget::from_constant(tap_leaf_hash) }
             { Step2KeyVersionGadget::from_constant(0) }
-            { Step3CodeSepPosGadget::from_constant(code_sep_pos) }
+            if code_sep_pos.is_some() {
+                { Step3CodeSepPosGadget::from_constant(code_sep_pos.unwrap()) }
+            } else {
+                { Step3CodeSepPosGadget::no_code_sep_executed() }
+            }
             OP_CAT3
         }
     }
@@ -58,7 +64,7 @@ mod test {
             };
 
             let script = script! {
-                { ExtGadget::from_constant(&tap_leaf_hash, code_sep_pos) }
+                { ExtGadget::from_constant(&tap_leaf_hash, Some(code_sep_pos)) }
                 OP_SHA256
 
                 { expected }

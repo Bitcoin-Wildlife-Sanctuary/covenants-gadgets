@@ -6,12 +6,12 @@ use bitvm::treepp::*;
 pub struct LockTimeGadget;
 
 impl LockTimeGadget {
-    pub fn from_constant_absolute(v: absolute::LockTime) -> Script {
+    pub fn from_constant_absolute(v: &absolute::LockTime) -> Script {
         let v = v.to_consensus_u32();
         push_u32_4bytes(v)
     }
 
-    pub fn from_constant_relative(v: relative::LockTime) -> Script {
+    pub fn from_constant_relative(v: &relative::LockTime) -> Script {
         match v {
             relative::LockTime::Blocks(v) => {
                 let v = v.to_consensus_u32();

@@ -1,5 +1,7 @@
 pub mod amount;
+pub mod annex;
 pub mod codesep_pos;
+pub mod epoch;
 pub mod hashtype;
 pub mod key_version;
 pub mod locktime;

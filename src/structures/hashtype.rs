@@ -4,7 +4,7 @@ use bitvm::treepp::*;
 pub struct HashTypeGadget;
 
 impl HashTypeGadget {
-    pub fn from_constant(hash_type: TapSighashType) -> Script {
+    pub fn from_constant(hash_type: &TapSighashType) -> Script {
         match hash_type {
             TapSighashType::Default => {
                 script! {
@@ -13,17 +13,17 @@ impl HashTypeGadget {
             }
             TapSighashType::All => {
                 script! {
-                    OP_PUSHBYTES_1 OP_PUSHBYTES_1
+                    OP_PUSHNUM_1
                 }
             }
             TapSighashType::None => {
                 script! {
-                    OP_PUSHBYTES_1 OP_PUSHBYTES_2
+                    OP_PUSHNUM_2
                 }
             }
             TapSighashType::Single => {
                 script! {
-                    OP_PUSHBYTES_1 OP_PUSHBYTES_3
+                    OP_PUSHNUM_3
                 }
             }
             TapSighashType::AllPlusAnyoneCanPay => {

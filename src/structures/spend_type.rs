@@ -17,7 +17,7 @@ impl SpendTypeGadget {
             }
         } else {
             script! {
-                { 1 }
+                { 2 }
             }
         }
     }

@@ -58,7 +58,7 @@ impl ScriptPubKeyGadget {
         Script::from_bytes(script)
     }
 
-    pub fn from_constant(script_pub_key: &ScriptPubKey) -> Script {
+    pub fn from_constructor(script_pub_key: &ScriptPubKey) -> Script {
         match script_pub_key {
             ScriptPubKey::P2WPKH(pkhash) => script! {
                 { VariableLengthIntegerGadget::from_constant(22) }
@@ -78,7 +78,7 @@ impl ScriptPubKeyGadget {
         }
     }
 
-    pub fn from_constant_scriptbuf(script_buf: &ScriptBuf) -> Script {
+    pub fn from_constant(script_buf: &ScriptBuf) -> Script {
         script! {
             { VariableLengthIntegerGadget::from_constant(script_buf.len()) }
             { script_buf.to_bytes() }
@@ -160,9 +160,9 @@ mod test {
             };
 
             let script = script! {
-                { ScriptPubKeyGadget::from_constant(&script_pub_key_1) }
-                { ScriptPubKeyGadget::from_constant(&script_pub_key_2) }
-                { ScriptPubKeyGadget::from_constant(&script_pub_key_3) }
+                { ScriptPubKeyGadget::from_constructor(&script_pub_key_1) }
+                { ScriptPubKeyGadget::from_constructor(&script_pub_key_2) }
+                { ScriptPubKeyGadget::from_constructor(&script_pub_key_3) }
                 OP_CAT3
                 OP_SHA256
 

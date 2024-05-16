@@ -5,9 +5,9 @@ use bitvm::treepp::*;
 pub struct VersionGadget;
 
 impl VersionGadget {
-    pub fn from_constant(version: Version) -> Script {
+    pub fn from_constant(version: &Version) -> Script {
         match version {
-            Version(v) => push_u32_4bytes(v as u32),
+            Version(v) => push_u32_4bytes(*v as u32),
         }
     }
 

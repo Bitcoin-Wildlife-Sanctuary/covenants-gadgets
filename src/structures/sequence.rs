@@ -6,7 +6,7 @@ use bitvm::treepp::*;
 pub struct SequenceGadget;
 
 impl SequenceGadget {
-    pub fn from_constant(sequence: Sequence) -> Script {
+    pub fn from_constant(sequence: &Sequence) -> Script {
         push_u32_4bytes(sequence.to_consensus_u32())
     }
 
@@ -54,9 +54,9 @@ mod test {
             };
 
             let script = script! {
-                { SequenceGadget::from_constant(seq_1) }
-                { SequenceGadget::from_constant(seq_2) }
-                { SequenceGadget::from_constant(seq_3) }
+                { SequenceGadget::from_constant(&seq_1) }
+                { SequenceGadget::from_constant(&seq_2) }
+                { SequenceGadget::from_constant(&seq_3) }
                 OP_CAT3
                 OP_SHA256
 

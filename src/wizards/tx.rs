@@ -1,22 +1,27 @@
+use crate::utils::pseudo::OP_CAT4;
 use bitcoin::Transaction;
 use bitvm::treepp::*;
 
-pub use crate::internal_structures::variable_length_integer::VariableLengthIntegerGadget as Step2InCounterGadget;
-pub use crate::internal_structures::variable_length_integer::VariableLengthIntegerGadget as Step4OutCounterGadget;
-pub use crate::structures::locktime::LockTimeGadget as Step6LockTimeGadget;
 pub use crate::structures::version::VersionGadget as Step1VersionGadget;
-use crate::utils::pseudo::OP_CAT4;
+
+pub use crate::internal_structures::variable_length_integer::VariableLengthIntegerGadget as Step2InCounterGadget;
+
 pub use crate::wizards::tx_in as step3_input;
 pub use crate::wizards::tx_in::TxInGadget as Step3InputGadget;
+
+pub use crate::internal_structures::variable_length_integer::VariableLengthIntegerGadget as Step4OutCounterGadget;
+
 pub use crate::wizards::tx_out as step5_output;
 pub use crate::wizards::tx_out::TxOutGadget as Step5OutputGadget;
+
+pub use crate::structures::locktime::LockTimeGadget as Step6LockTimeGadget;
 
 pub struct TxGadget;
 
 impl TxGadget {
     pub fn from_constant(tx: &Transaction) -> Script {
         script! {
-            { Step1VersionGadget::from_constant(tx.version) }
+            { Step1VersionGadget::from_constant(&tx.version) }
             { Step2InCounterGadget::from_constant(tx.input.len()) }
             for entry in tx.input.iter() {
                 { Step3InputGadget::from_constant(entry) }
@@ -27,7 +32,7 @@ impl TxGadget {
                 { Step5OutputGadget::from_constant(entry) }
                 OP_CAT
             }
-            { Step6LockTimeGadget::from_constant_absolute(tx.lock_time) }
+            { Step6LockTimeGadget::from_constant_absolute(&tx.lock_time) }
             OP_CAT4
         }
     }
@@ -56,16 +61,24 @@ mod test {
         let bytes = hex::decode(hex).unwrap();
         let tx = Transaction::consensus_decode(&mut bytes.as_slice()).unwrap();
 
-        let mut tx_preimage = vec![];
-        tx.version.consensus_encode(&mut tx_preimage).unwrap();
-        tx.input.consensus_encode(&mut tx_preimage).unwrap();
-        tx.output.consensus_encode(&mut tx_preimage).unwrap();
-        tx.lock_time.consensus_encode(&mut tx_preimage).unwrap();
+        let mut tx_preimage_expected = vec![];
+        tx.version
+            .consensus_encode(&mut tx_preimage_expected)
+            .unwrap();
+        tx.input
+            .consensus_encode(&mut tx_preimage_expected)
+            .unwrap();
+        tx.output
+            .consensus_encode(&mut tx_preimage_expected)
+            .unwrap();
+        tx.lock_time
+            .consensus_encode(&mut tx_preimage_expected)
+            .unwrap();
 
         let txid = tx.compute_txid();
 
         let script = script! {
-            { tx::Step1VersionGadget::from_constant(tx.version) }
+            { tx::Step1VersionGadget::from_constant(&tx.version) }
             { tx::Step2InCounterGadget::from_constant(tx.input.len()) }
             OP_CAT2
 
@@ -74,7 +87,7 @@ mod test {
                 { tx::step3_input::step1_outpoint::Step2IndexGadget::from_constant(input.previous_output.vout) }
                 OP_CAT2
                 { tx::step3_input::Step2ScriptSigGadget::segregated_witness() }
-                { tx::step3_input::Step3SequenceGadget::from_constant(input.sequence) }
+                { tx::step3_input::Step3SequenceGadget::from_constant(&input.sequence) }
                 OP_CAT3
 
                 OP_CAT2
@@ -84,17 +97,33 @@ mod test {
             OP_CAT2
 
             for output in tx.output.iter() {
-                { tx::step5_output::Step1AmountGadget::from_constant(output.value) }
-                { tx::step5_output::Step2ScriptPubKeyGadget::from_constant_scriptbuf(&output.script_pubkey) }
+                { tx::step5_output::Step1AmountGadget::from_constant(&output.value) }
+                { tx::step5_output::Step2ScriptPubKeyGadget::from_constant(&output.script_pubkey) }
                 OP_CAT2
 
                 OP_CAT2
             }
 
-            { tx::Step6LockTimeGadget::from_constant_absolute(tx.lock_time) }
+            { tx::Step6LockTimeGadget::from_constant_absolute(&tx.lock_time) }
             OP_CAT2
 
-            { tx_preimage }
+            { tx_preimage_expected.clone() }
+            OP_DUP OP_TOALTSTACK
+            OP_EQUALVERIFY
+
+            OP_FROMALTSTACK
+            OP_SHA256 OP_SHA256
+            { AsRef::<[u8]>::as_ref(&txid).to_vec() }
+            OP_EQUAL
+        };
+
+        let exec_script = execute_script(script);
+        assert!(exec_script.success);
+
+        let script = script! {
+            { tx::TxGadget::from_constant(&tx) }
+
+            { tx_preimage_expected }
             OP_DUP OP_TOALTSTACK
             OP_EQUALVERIFY
 
