@@ -6,6 +6,7 @@ pub enum HashTag {
     TapLeaf,
     TapTweak,
     TapSighash,
+    BIP340Challenge,
 }
 
 impl HashTag {
@@ -14,6 +15,7 @@ impl HashTag {
             HashTag::TapLeaf => "TapLeaf",
             HashTag::TapTweak => "TapTweak",
             HashTag::TapSighash => "TapSighash",
+            HashTag::BIP340Challenge => "BIP0340/challenge",
         }
     }
 }
