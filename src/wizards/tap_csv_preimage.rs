@@ -153,9 +153,9 @@ pub use crate::wizards::tx_out::TxOutGadget as Step11ThisOutputGadgetIfSingle;
 pub use crate::wizards::ext as step12_ext;
 pub use crate::wizards::ext::ExtGadget as Step12ExtGadget;
 
-pub struct TagCSVPreImageGadget;
+pub struct TapCSVPreImageGadget;
 
-impl TagCSVPreImageGadget {
+impl TapCSVPreImageGadget {
     pub fn from_constant(
         tx: &Transaction,
         input_amounts: &[Amount],
@@ -212,24 +212,23 @@ impl TagCSVPreImageGadget {
 #[cfg(test)]
 mod test {
     use crate::utils::pseudo::{OP_CAT2, OP_CAT3, OP_CAT4};
-    use crate::wizards::tag_csv_preimage::{
+    use crate::wizards::tap_csv_preimage::{
         step11_this_output_if_single, step12_ext, step5_tx_data_part1_if_not_anyonecanpay,
         step8_data_input_part_if_anyonecanpay, Step10AnnexGadgetIfPresent, Step1EpochGadget,
         Step2HashTypeGadget, Step3VersionGadget, Step4LockTimeGadget,
         Step6TxPart2GadgetIfNotNoneOrSingle, Step7SpendTypeGadget,
-        Step9InputIndexGadgetIfNotAnyOneCanPay, TagCSVPreImageGadget,
+        Step9InputIndexGadgetIfNotAnyOneCanPay, TapCSVPreImageGadget,
     };
-    use bitcoin::consensus::{Decodable, Encodable};
+    use bitcoin::consensus::Decodable;
     use bitcoin::hashes::Hash;
-    use bitcoin::{Amount, ScriptBuf, TapLeafHash, TapSighashType, Transaction};
+    use bitcoin::sighash::{Prevouts, SighashCache};
+    use bitcoin::{Amount, ScriptBuf, TapLeafHash, TapSighashType, Transaction, TxOut};
     use bitvm::treepp::*;
     use rand::{RngCore, SeedableRng};
     use rand_chacha::ChaCha20Rng;
-    use sha2::Digest;
-    use std::io::Write;
 
     #[test]
-    fn test_tag_csv_preimage() {
+    fn test_tap_csv_preimage() {
         // Murchandamus suggested this in the Bitcoin stackexchange
         // 2eb8dbaa346d4be4e82fe444c2f0be00654d8cfd8c4a9a61b11aeaab8c00b272
 
@@ -258,137 +257,27 @@ mod test {
         let tap_leaf_hash = TapLeafHash::hash(&random_tap_data);
 
         let tx_preimage_expected = {
-            // based on the implementation of `taproot_encode_signing_data_to` in
-            // https://github.com/rust-bitcoin/rust-bitcoin/blob/master/bitcoin/src/crypto/sighash.rs#L581
-
             let mut bytes = vec![];
-            let writer = &mut bytes;
-
-            // epoch
-            0u8.consensus_encode(writer).unwrap();
-
-            // * Control:
-            // hash_type (1).
-            (hash_type as u8).consensus_encode(writer).unwrap();
-
-            // * Transaction Data:
-            // nVersion (4): the nVersion of the transaction.
-            tx.version.consensus_encode(writer).unwrap();
-
-            // nLockTime (4): the nLockTime of the transaction.
-            tx.lock_time.consensus_encode(writer).unwrap();
-
-            if ![
-                TapSighashType::AllPlusAnyoneCanPay,
-                TapSighashType::NonePlusAnyoneCanPay,
-                TapSighashType::SinglePlusAnyoneCanPay,
-            ]
-            .contains(&hash_type)
-            {
-                let mut data = vec![];
-                for input in tx.input.iter() {
-                    input.previous_output.consensus_encode(&mut data).unwrap();
-                }
-                let mut sha256 = sha2::Sha256::new();
-                Digest::update(&mut sha256, &data);
-                writer.write(&sha256.finalize()).unwrap();
-
-                let mut data = vec![];
-                for amount in input_amounts.iter() {
-                    amount.consensus_encode(&mut data).unwrap();
-                }
-                let mut sha256 = sha2::Sha256::new();
-                Digest::update(&mut sha256, &data);
-                writer.write(&sha256.finalize()).unwrap();
-
-                let mut data = vec![];
-                for script_pubkey in input_script_pub_keys.iter() {
-                    script_pubkey.consensus_encode(&mut data).unwrap();
-                }
-                let mut sha256 = sha2::Sha256::new();
-                Digest::update(&mut sha256, &data);
-                writer.write(&sha256.finalize()).unwrap();
-
-                let mut data = vec![];
-                for input in tx.input.iter() {
-                    input.sequence.consensus_encode(&mut data).unwrap();
-                }
-                let mut sha256 = sha2::Sha256::new();
-                Digest::update(&mut sha256, &data);
-                writer.write(&sha256.finalize()).unwrap();
-            }
-
-            // If hash_type & 3 does not equal SIGHASH_NONE or SIGHASH_SINGLE:
-            //     sha_outputs (32): the SHA256 of the serialization of all outputs in CTxOut format.
-            if [
-                TapSighashType::All,
-                TapSighashType::Default,
-                TapSighashType::AllPlusAnyoneCanPay,
-            ]
-            .contains(&hash_type)
-            {
-                let mut data = vec![];
-                for output in tx.output.iter() {
-                    output.consensus_encode(&mut data).unwrap();
-                }
-                let mut sha256 = sha2::Sha256::new();
-                Digest::update(&mut sha256, &data);
-                writer.write(&sha256.finalize()).unwrap();
-            }
-
-            // * Data about this input:
-            // spend_type (1): equal to (ext_flag * 2) + annex_present, where annex_present is 0
-            // if no annex is present, or 1 otherwise
-            let mut spend_type = 0u8;
-            spend_type |= 2u8;
-            spend_type.consensus_encode(writer).unwrap();
-
-            // If hash_type & 0x80 equals SIGHASH_ANYONECANPAY:
-            //      outpoint (36): the COutPoint of this input (32-byte hash + 4-byte little-endian).
-            //      amount (8): value of the previous output spent by this input.
-            //      scriptPubKey (35): scriptPubKey of the previous output spent by this input, serialized as script inside CTxOut. Its size is always 35 bytes.
-            //      nSequence (4): nSequence of this input.
-            if [
-                TapSighashType::AllPlusAnyoneCanPay,
-                TapSighashType::NonePlusAnyoneCanPay,
-                TapSighashType::SinglePlusAnyoneCanPay,
-            ]
-            .contains(&hash_type)
-            {
-                tx.input[0]
-                    .previous_output
-                    .consensus_encode(writer)
-                    .unwrap();
-                input_amounts[0].consensus_encode(writer).unwrap();
-                input_script_pub_keys[0].consensus_encode(writer).unwrap();
-                tx.input[0].sequence.consensus_encode(writer).unwrap();
-            } else {
-                (0u32).consensus_encode(writer).unwrap();
-            }
-
-            // * Data about this output:
-            // If hash_type & 3 equals SIGHASH_SINGLE:
-            //      sha_single_output (32): the SHA256 of the corresponding output in CTxOut format.
-            if [
-                TapSighashType::Single,
-                TapSighashType::SinglePlusAnyoneCanPay,
-            ]
-            .contains(&hash_type)
-            {
-                let mut data = vec![];
-                tx.output[0].consensus_encode(&mut data).unwrap();
-
-                let mut sha256 = sha2::Sha256::new();
-                Digest::update(&mut sha256, data);
-                writer.write(&sha256.finalize()).unwrap();
-            }
-
-            tap_leaf_hash
-                .as_byte_array()
-                .consensus_encode(writer)
+            let mut sighashcache = SighashCache::new(tx.clone());
+            sighashcache
+                .taproot_encode_signing_data_to(
+                    &mut bytes,
+                    0,
+                    &Prevouts::All(&[
+                        TxOut {
+                            value: input_amounts[0].clone(),
+                            script_pubkey: input_script_pub_keys[0].clone(),
+                        },
+                        TxOut {
+                            value: input_amounts[1].clone(),
+                            script_pubkey: input_script_pub_keys[1].clone(),
+                        },
+                    ]),
+                    None,
+                    Some((tap_leaf_hash, 0xffffffffu32)),
+                    TapSighashType::All,
+                )
                 .unwrap();
-            0u8.consensus_encode(writer).unwrap();
-            0xffffffffu32.consensus_encode(writer).unwrap();
 
             bytes
         };
@@ -458,7 +347,7 @@ mod test {
                 { step11_this_output_if_single::Step2ScriptPubKeyGadget::from_constant(&tx.output[0].script_pubkey) }
                 OP_CAT2
             }
-            { step12_ext::Step1TagLeafHashGadget::from_constant(&tap_leaf_hash) }
+            { step12_ext::Step1TapLeafHashGadget::from_constant(&tap_leaf_hash) }
             { step12_ext::Step2KeyVersionGadget::from_constant(0) }
             { step12_ext::Step3CodeSepPosGadget::no_code_sep_executed() }
             OP_CAT3
@@ -467,7 +356,7 @@ mod test {
             { tx_preimage_expected.clone() }
             OP_EQUALVERIFY
 
-            { TagCSVPreImageGadget::from_constant(&tx, &input_amounts, &input_script_pub_keys, 0, &tap_leaf_hash, None, &TapSighashType::All) }
+            { TapCSVPreImageGadget::from_constant(&tx, &input_amounts, &input_script_pub_keys, 0, &tap_leaf_hash, None, &TapSighashType::All) }
             { tx_preimage_expected }
             OP_EQUAL
         };
