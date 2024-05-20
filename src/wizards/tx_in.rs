@@ -9,9 +9,13 @@ pub use crate::structures::script_sig::ScriptSigGadget as Step2ScriptSigGadget;
 
 pub use crate::structures::sequence::SequenceGadget as Step3SequenceGadget;
 
+/// Gadget for transaction input.
 pub struct TxInGadget;
 
 impl TxInGadget {
+    /// Construct the transaction input from constant data.
+    ///
+    /// TxIn = OutPoint + ScriptSig (empty for segwit) + Sequence
     pub fn from_constant(tx_in: &TxIn) -> Script {
         assert!(tx_in.script_sig.is_empty());
 

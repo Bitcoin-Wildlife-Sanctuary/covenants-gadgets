@@ -3,14 +3,17 @@ use crate::utils::{push_u32_4bytes, push_u64_8bytes};
 use bitvm::pseudo::OP_256MUL;
 use bitvm::treepp::*;
 
+/// Gadget for 64-bit unsigned integer.
 pub struct CppUInt64Gadget;
 
 impl CppUInt64Gadget {
+    /// Construct the 64-bit unsigned integer from constant data.
     pub fn from_constant(v: u64) -> Script {
         push_u64_8bytes(v)
     }
 
-    pub fn from_bitcoin_integer() -> Script {
+    /// Construct the 64-bit unsigned integer from a positive Bitcoin integer.
+    pub fn from_positive_bitcoin_integer() -> Script {
         script! {
             // sanity check: input must be greater or equal to zero
             OP_DUP 0 OP_GREATERTHANOREQUAL OP_VERIFY
@@ -23,6 +26,8 @@ impl CppUInt64Gadget {
         }
     }
 
+    /// Construct the 64-bit unsigned integer from two Bitcoin integer, one representing
+    /// the lower 4 bytes, one representing the higher 4 bytes.
     pub fn from_two_bitcoin_integers() -> Script {
         script! {
             { CppInt32Gadget::from_bitcoin_integer() }
@@ -32,6 +37,7 @@ impl CppUInt64Gadget {
         }
     }
 
+    /// Construct the 64-bit unsigned integer from u64 represented by four 16-bit limbs.
     pub fn from_u64_in_16bit_limbs() -> Script {
         script! {
             OP_SWAP OP_DUP 32768 OP_GREATERTHANOREQUAL OP_IF
@@ -99,7 +105,7 @@ mod test {
         let v = 0x78345612;
         let script = script! {
             { v }
-            { CppUInt64Gadget::from_bitcoin_integer() }
+            { CppUInt64Gadget::from_positive_bitcoin_integer() }
             { push_u64_8bytes(0x78345612) }
             OP_EQUAL
         };

@@ -6,46 +6,58 @@ use bitcoin::opcodes::OP_0;
 use bitcoin::ScriptBuf;
 use bitvm::treepp::*;
 
+/// Wrapper for supported script pub keys.
 pub enum ScriptPubKey {
+    /// pay-to-witness-public-key-hash, given the 20-byte public key hash
     P2WPKH(Vec<u8>),
+    /// pay-to-witness-script-hash, given the 32-byte script hash
     P2WSH(Vec<u8>),
+    /// pay-to-taproot, given the 32-byte taproot point
     P2TR(Vec<u8>),
 }
 
+/// Enums for different types of supported script pub keys.
 #[derive(Clone, Copy)]
 pub enum ScriptPubKeyType {
+    /// pay-to-witness-public-key-hash
     P2WPKH,
+    /// pay-to-witness-script-hash
     P2WSH,
+    /// pay-to-taproot
     P2TR,
 }
 
+/// Gadget for the script public key.
 pub struct ScriptPubKeyGadget;
 
 impl ScriptPubKeyGadget {
-    pub fn p2wpkh_from_constant_hash(pkhash: &[u8]) -> Script {
-        assert_eq!(pkhash.len(), 20);
+    /// Construct the script public key from the witness public key hash.
+    pub fn p2wpkh_from_constant_hash(wpkhash: &[u8]) -> Script {
+        assert_eq!(wpkhash.len(), 20);
 
         let mut script = vec![
             OP_PUSHBYTES_22.to_u8(),
             OP_0.to_u8(),
             OP_PUSHBYTES_20.to_u8(),
         ];
-        script.extend_from_slice(pkhash);
+        script.extend_from_slice(wpkhash);
         Script::from_bytes(script)
     }
 
-    pub fn p2wsh_from_constant_hash(script_hash: &[u8]) -> Script {
-        assert_eq!(script_hash.len(), 32);
+    /// Construct the script public key from the witness script hash.
+    pub fn p2wsh_from_constant_hash(wsh: &[u8]) -> Script {
+        assert_eq!(wsh.len(), 32);
 
         let mut script = vec![
             OP_PUSHBYTES_34.to_u8(),
             OP_0.to_u8(),
             OP_PUSHBYTES_32.to_u8(),
         ];
-        script.extend_from_slice(script_hash);
+        script.extend_from_slice(wsh);
         Script::from_bytes(script)
     }
 
+    /// Construct the script public key from the taproot point.
     pub fn p2tr_from_public_key(public_key: &[u8]) -> Script {
         assert_eq!(public_key.len(), 32);
 
@@ -58,6 +70,7 @@ impl ScriptPubKeyGadget {
         Script::from_bytes(script)
     }
 
+    /// Construct the script public key from the `ScriptPubKey` struct.
     pub fn from_constructor(script_pub_key: &ScriptPubKey) -> Script {
         match script_pub_key {
             ScriptPubKey::P2WPKH(pkhash) => script! {
@@ -78,6 +91,7 @@ impl ScriptPubKeyGadget {
         }
     }
 
+    /// Construct the script public key from constant data.
     pub fn from_constant(script_buf: &ScriptBuf) -> Script {
         script! {
             { VariableLengthIntegerGadget::from_constant(script_buf.len()) }
@@ -86,6 +100,9 @@ impl ScriptPubKeyGadget {
         }
     }
 
+    /// Construct the script public key from the provided data on the stack.
+    ///
+    /// It checks if the provided data has the right number of bytes.
     pub fn from_provided(script_pub_key_type: ScriptPubKeyType) -> Script {
         match script_pub_key_type {
             ScriptPubKeyType::P2WPKH => script! {

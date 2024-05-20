@@ -1,15 +1,21 @@
 use bitvm::treepp::*;
 use sha2::Digest;
 
+/// Enum for different hashtags used in tagged hashes.
 #[derive(Clone, Eq, PartialEq)]
 pub enum HashTag {
+    /// tap leaf hash, which hashes a script
     TapLeaf,
+    /// tap tweak hash, which is used for tweaking
     TapTweak,
+    /// tap sig hash, which is to compute the sighash for Taproot signature verification
     TapSighash,
+    /// BIP340 challenge, which is used in the Schnorr signature
     BIP340Challenge,
 }
 
 impl HashTag {
+    /// Convert the hashtag to the corresponding preimage for SHA256.
     pub fn to_str(&self) -> &'static str {
         match self {
             HashTag::TapLeaf => "TapLeaf",
@@ -20,9 +26,11 @@ impl HashTag {
     }
 }
 
+/// Gadget for computing tagged hashes.
 pub struct TaggedHashGadget;
 
 impl TaggedHashGadget {
+    /// Construct the tagged hash result from constant data.
     pub fn from_constant(hashtag: &HashTag, msg: &[u8]) -> Script {
         let hashed_tag = get_hashed_tag(hashtag.to_str());
 
@@ -37,6 +45,7 @@ impl TaggedHashGadget {
         }
     }
 
+    /// Compute the tagged hash from a constant tag and the provided message on the stack.
     pub fn from_provided(hashtag: &HashTag) -> Script {
         let hashed_tag = get_hashed_tag(hashtag.to_str());
         script! {
@@ -48,6 +57,7 @@ impl TaggedHashGadget {
     }
 }
 
+/// Obtain the hash of the tag that will be used to compute the tagged hash.
 pub fn get_hashed_tag(tag: &'static str) -> Vec<u8> {
     let mut sha256 = sha2::Sha256::new();
     Digest::update(&mut sha256, tag.as_bytes());

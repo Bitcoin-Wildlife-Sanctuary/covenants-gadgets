@@ -1,9 +1,11 @@
 use bitcoin::TapSighashType;
 use bitvm::treepp::*;
 
+/// Gadget for the hash type.
 pub struct HashTypeGadget;
 
 impl HashTypeGadget {
+    /// Construct the hash type from constant data.
     pub fn from_constant(hash_type: &TapSighashType) -> Script {
         match hash_type {
             TapSighashType::Default => {
@@ -28,6 +30,7 @@ impl HashTypeGadget {
             }
             TapSighashType::AllPlusAnyoneCanPay => {
                 script! {
+                    // If one use OP_PUSHBYTES_1, it would violate the minimal push rule.
                     OP_PUSHNUM_NEG1
                 }
             }
@@ -44,6 +47,9 @@ impl HashTypeGadget {
         }
     }
 
+    /// Construct the hash type from the provided hash type on the stack.
+    ///
+    /// It checks if the hash type is one of the valid ones.
     pub fn from_provided() -> Script {
         script! {
             OP_DUP OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_EQUAL

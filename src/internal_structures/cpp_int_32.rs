@@ -1,13 +1,16 @@
 use crate::utils::push_u32_4bytes;
 use bitvm::treepp::*;
 
+/// Gadget for C++-like 32-bit signed integer.
 pub struct CppInt32Gadget;
 
 impl CppInt32Gadget {
+    /// Construct a 32-bit signed integer from constant data.
     pub fn from_constant(v: u32) -> Script {
         push_u32_4bytes(v)
     }
 
+    /// Construct a 32-bit signed integer from a Bitcoin integer on the stack.
     pub fn from_bitcoin_integer() -> Script {
         script! {
             OP_DUP OP_ABS
@@ -36,6 +39,7 @@ impl CppInt32Gadget {
         }
     }
 
+    /// Construct a 32-bit signed integer from a positive Bitcoin integer on the stack.
     pub fn from_positive_bitcoin_integer() -> Script {
         script! {
             OP_SIZE 3 OP_LESSTHAN OP_IF OP_PUSHBYTES_2 OP_PUSHBYTES_0 OP_PUSHBYTES_0 OP_CAT OP_ENDIF

@@ -2,21 +2,27 @@ use crate::internal_structures::cpp_uint_64::CppUInt64Gadget;
 use bitcoin::Amount;
 use bitvm::treepp::*;
 
+/// Gadget for the amount.
 pub struct AmountGadget;
 
 impl AmountGadget {
+    /// Construct the amount from constant data.
     pub fn from_constant(amount: &Amount) -> Script {
         CppUInt64Gadget::from_constant(amount.to_sat())
     }
 
+    /// Construct the amount from one Bitcoin integer.
     pub fn from_bitcoin_integer() -> Script {
-        CppUInt64Gadget::from_bitcoin_integer()
+        CppUInt64Gadget::from_positive_bitcoin_integer()
     }
 
+    /// Construct the amount from two Bitcoin integers, one representing the lower 4 bytes,
+    /// one representing the upper 4 bytes.
     pub fn from_two_bitcoin_integers() -> Script {
         CppUInt64Gadget::from_two_bitcoin_integers()
     }
 
+    /// Construct the amount from u64 represented in four 16-bit limbs.
     pub fn from_u64_in_16bit_limbs() -> Script {
         CppUInt64Gadget::from_u64_in_16bit_limbs()
     }

@@ -16,9 +16,13 @@ pub use crate::wizards::tx_out::TxOutGadget as Step5OutputGadget;
 
 pub use crate::structures::locktime::LockTimeGadget as Step6LockTimeGadget;
 
+/// Gadget for the transaction.
 pub struct TxGadget;
 
 impl TxGadget {
+    /// Construct the transaction from constant data.
+    ///
+    /// Transaction = Version + InCounter + Ins + OutCounter + Outs + LockTime
     pub fn from_constant(tx: &Transaction) -> Script {
         script! {
             { Step1VersionGadget::from_constant(&tx.version) }
@@ -34,12 +38,6 @@ impl TxGadget {
             }
             { Step6LockTimeGadget::from_constant_absolute(&tx.lock_time) }
             OP_CAT4
-        }
-    }
-
-    pub fn hash() -> Script {
-        script! {
-            OP_SHA256 OP_SHA256
         }
     }
 }

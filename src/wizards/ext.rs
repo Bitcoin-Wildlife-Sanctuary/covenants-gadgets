@@ -8,13 +8,19 @@ pub use crate::structures::key_version::KeyVersionGadget as Step2KeyVersionGadge
 
 pub use crate::structures::codesep_pos::CodeSepPosGadget as Step3CodeSepPosGadget;
 
+/// Gadget for the extension in taproot CheckSigVerify.
 pub struct ExtGadget;
 
 impl ExtGadget {
+    /// Construct the extension using the tap leaf hash and the code separator position.
     pub fn from_constant(tap_leaf_hash: &TapLeafHash, code_sep_pos: Option<u32>) -> Script {
         script! {
+            // tap leaf hash
             { Step1TapLeafHashGadget::from_constant(tap_leaf_hash) }
+            // key version, currently always zero
             { Step2KeyVersionGadget::from_constant(0) }
+            // code separator position
+            // if no OP_CODESEPARATOR has ever been executed, the default 0xffffffff will be used.
             if code_sep_pos.is_some() {
                 { Step3CodeSepPosGadget::from_constant(code_sep_pos.unwrap()) }
             } else {

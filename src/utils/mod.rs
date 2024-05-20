@@ -1,8 +1,10 @@
 use bitcoin::opcodes::all::{OP_PUSHBYTES_4, OP_PUSHBYTES_8};
 use bitvm::treepp::*;
 
+/// Modules for some pseudo opcodes.
 pub mod pseudo;
 
+/// Push a 32-bit unsigned integer as a 4-byte string on the stack.
 pub fn push_u32_4bytes(v: u32) -> Script {
     Script::from_bytes(vec![
         OP_PUSHBYTES_4.to_u8(),
@@ -13,6 +15,7 @@ pub fn push_u32_4bytes(v: u32) -> Script {
     ])
 }
 
+/// Push a 64-bit unsigned integer as an 8-byte string on the stack.
 pub fn push_u64_8bytes(v: u64) -> Script {
     Script::from_bytes(vec![
         OP_PUSHBYTES_8.to_u8(),

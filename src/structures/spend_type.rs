@@ -1,8 +1,10 @@
 use bitvm::treepp::*;
 
+/// Gadget for the spend type.
 pub struct SpendTypeGadget;
 
 impl SpendTypeGadget {
+    /// Construct the spend type using the constant extension flag and whether the annex is present.
     pub fn from_constant(ext_flag: u8, has_annex: bool) -> Script {
         // other ext flags can be very tricky, as one cannot easily represent a number larger than
         // 127 using a single byte in the stack without a lot of manual conversions.
@@ -22,6 +24,9 @@ impl SpendTypeGadget {
         }
     }
 
+    /// Construct the spend type from the provided type on the stack.
+    ///
+    /// It verifies that the provided spend type is either 0 or 1.
     pub fn from_provided() -> Script {
         script! {
             OP_DUP 0 OP_EQUAL OP_IF

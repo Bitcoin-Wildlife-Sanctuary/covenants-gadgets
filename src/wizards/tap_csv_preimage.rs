@@ -1,3 +1,4 @@
+/// The first part of the transaction data.
 pub mod tx_data_part1 {
     use crate::utils::pseudo::{OP_CAT2, OP_CAT4};
     use bitcoin::{Amount, OutPoint, ScriptBuf, Sequence};
@@ -12,8 +13,11 @@ pub mod tx_data_part1 {
 
     pub use crate::structures::sequence::SequenceGadget as Step4SequenceGadget;
 
+    /// Gadget for the first part of the transaction data, which consists of four SHA256 hashes.
     pub struct TxDataPart1Gadget;
+
     impl TxDataPart1Gadget {
+        /// Compute the hashes in Bitcoin script from the constant data.
         pub fn from_constant(
             outpoints: &[OutPoint],
             amounts: &[Amount],
@@ -60,6 +64,7 @@ pub mod tx_data_part1 {
     }
 }
 
+/// The second part of the transaction data.
 pub mod tx_data_part2 {
     use crate::utils::pseudo::OP_CAT2;
     use bitcoin::TxOut;
@@ -68,23 +73,29 @@ pub mod tx_data_part2 {
     pub use crate::wizards::tx_out as step1_tx_out;
     pub use crate::wizards::tx_out::TxOutGadget as Step1TxOutGadget;
 
+    /// Gadget for the second part of the transaction data, which refers to the outputs.
     pub struct TxDataPart2Gadget;
 
     impl TxDataPart2Gadget {
+        /// Construct the second part of the transaction data using constant outputs.
         pub fn from_constant(outputs: &[TxOut]) -> Script {
             script! {
+                // Initialize an empty string to be appended below.
                 OP_PUSHBYTES_0
 
                 for output in outputs.iter() {
                     { Step1TxOutGadget::from_constant(output) }
                     OP_CAT2
                 }
+
+                // Compute sha_outputs.
                 OP_SHA256
             }
         }
     }
 }
 
+/// Preimage for data input in case of anyonecanpay.
 pub mod data_input_if_anyonecanpay {
     use bitcoin::{Amount, OutPoint, ScriptBuf, Sequence};
     use bitvm::treepp::*;
@@ -99,9 +110,14 @@ pub mod data_input_if_anyonecanpay {
     pub use crate::structures::sequence::SequenceGadget as Step4SequenceGadget;
     use crate::utils::pseudo::OP_CAT4;
 
+    /// Optional part 1 of data input (only required for anyonecanpay),
+    /// which refers to the specific transaction input that initiates anyonecanpay.
+    ///
+    /// OutPoint + Amount + ScriptPubKey + Sequence
     pub struct DataInputPart1Gadget;
 
     impl DataInputPart1Gadget {
+        /// Construct the optional part 1 of data input from constant data.
         pub fn from_constant(
             outpoint: &OutPoint,
             amount: &Amount,
@@ -153,9 +169,11 @@ pub use crate::wizards::tx_out::TxOutGadget as Step11ThisOutputGadgetIfSingle;
 pub use crate::wizards::ext as step12_ext;
 pub use crate::wizards::ext::ExtGadget as Step12ExtGadget;
 
+/// Gadget for the preimage for taproot CheckSigVerify.
 pub struct TapCSVPreImageGadget;
 
 impl TapCSVPreImageGadget {
+    /// Construct the preimage from constant data.
     pub fn from_constant(
         tx: &Transaction,
         input_amounts: &[Amount],

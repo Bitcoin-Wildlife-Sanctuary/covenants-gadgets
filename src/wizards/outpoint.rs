@@ -6,9 +6,11 @@ pub use crate::structures::txid::TxIdGadget as Step1TxIdGadget;
 
 pub use crate::internal_structures::cpp_int_32::CppInt32Gadget as Step2IndexGadget;
 
+/// Gadget for the input outpoint.
 pub struct OutPointGadget;
 
 impl OutPointGadget {
+    /// Construct the input outpoint from txid and vout.
     pub fn from_constant(outpoint: &OutPoint) -> Script {
         script! {
             { Step1TxIdGadget::from_constant(outpoint.txid) }

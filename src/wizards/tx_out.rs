@@ -6,9 +6,13 @@ pub use crate::structures::amount::AmountGadget as Step1AmountGadget;
 
 pub use crate::structures::script_pub_key::ScriptPubKeyGadget as Step2ScriptPubKeyGadget;
 
+/// Gadget for transaction output.
 pub struct TxOutGadget;
 
 impl TxOutGadget {
+    /// Construct the transaction output from constant data.
+    ///
+    /// TxOut = Amount + ScriptPubKey
     pub fn from_constant(tx_out: &TxOut) -> Script {
         script! {
             { Step1AmountGadget::from_constant(&tx_out.value) }

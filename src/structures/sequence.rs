@@ -3,17 +3,23 @@ use crate::utils::push_u32_4bytes;
 use bitcoin::Sequence;
 use bitvm::treepp::*;
 
+/// Gadget for the input sequence.
 pub struct SequenceGadget;
 
 impl SequenceGadget {
+    /// Construct the input sequence from constant data.
     pub fn from_constant(sequence: &Sequence) -> Script {
         push_u32_4bytes(sequence.to_consensus_u32())
     }
 
+    /// Construct the input sequence from a Bitcoin integer on the stack.
     pub fn from_bitcoin_integer() -> Script {
         CppInt32Gadget::from_bitcoin_integer()
     }
 
+    /// Construct the input sequence from a positive Bitcoin integer on the stack.
+    ///
+    /// This is faster than `from_bitcoin_integer` because it doesn't handle negative numbers.
     pub fn from_positive_bitcoin_integer() -> Script {
         CppInt32Gadget::from_positive_bitcoin_integer()
     }
