@@ -1,8 +1,8 @@
 /// The first part of the transaction data.
 pub mod tx_data_part1 {
+    use crate::treepp::*;
     use crate::utils::pseudo::{OP_CAT2, OP_CAT4};
     use bitcoin::{Amount, OutPoint, ScriptBuf, Sequence};
-    use bitvm::treepp::*;
 
     pub use crate::wizards::outpoint as step1_outpoint;
     pub use crate::wizards::outpoint::OutPointGadget as Step1OutPointGadget;
@@ -66,9 +66,9 @@ pub mod tx_data_part1 {
 
 /// The second part of the transaction data.
 pub mod tx_data_part2 {
+    use crate::treepp::*;
     use crate::utils::pseudo::OP_CAT2;
     use bitcoin::TxOut;
-    use bitvm::treepp::*;
 
     pub use crate::wizards::tx_out as step1_tx_out;
     pub use crate::wizards::tx_out::TxOutGadget as Step1TxOutGadget;
@@ -97,8 +97,8 @@ pub mod tx_data_part2 {
 
 /// Preimage for data input in case of anyonecanpay.
 pub mod data_input_if_anyonecanpay {
+    use crate::treepp::*;
     use bitcoin::{Amount, OutPoint, ScriptBuf, Sequence};
-    use bitvm::treepp::*;
 
     pub use crate::wizards::outpoint as step1_outpoint;
     pub use crate::wizards::outpoint::OutPointGadget as Step1OutPointGadget;
@@ -136,9 +136,9 @@ pub mod data_input_if_anyonecanpay {
     }
 }
 
+use crate::treepp::*;
 use crate::utils::pseudo::{OP_CAT2, OP_CAT4};
 use bitcoin::{Amount, OutPoint, ScriptBuf, Sequence, TapLeafHash, TapSighashType, Transaction};
-use bitvm::treepp::*;
 
 pub use crate::structures::epoch::EpochGadget as Step1EpochGadget;
 
@@ -229,6 +229,7 @@ impl TapCSVPreImageGadget {
 
 #[cfg(test)]
 mod test {
+    use crate::treepp::*;
     use crate::utils::pseudo::{OP_CAT2, OP_CAT3, OP_CAT4};
     use crate::wizards::tap_csv_preimage::{
         step11_this_output_if_single, step12_ext, step5_tx_data_part1_if_not_anyonecanpay,
@@ -241,7 +242,6 @@ mod test {
     use bitcoin::hashes::Hash;
     use bitcoin::sighash::{Prevouts, SighashCache};
     use bitcoin::{Amount, ScriptBuf, TapLeafHash, TapSighashType, Transaction, TxOut};
-    use bitvm::treepp::*;
     use rand::{RngCore, SeedableRng};
     use rand_chacha::ChaCha20Rng;
 

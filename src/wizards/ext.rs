@@ -1,6 +1,6 @@
+use crate::treepp::*;
 use crate::utils::pseudo::OP_CAT3;
 use bitcoin::TapLeafHash;
-use bitvm::treepp::*;
 
 pub use crate::structures::tap_leaf_hash::TapLeafHashGadget as Step1TapLeafHashGadget;
 
@@ -33,11 +33,11 @@ impl ExtGadget {
 
 #[cfg(test)]
 mod test {
+    use crate::treepp::*;
     use crate::wizards::ext::ExtGadget;
     use bitcoin::consensus::Encodable;
     use bitcoin::hashes::Hash;
     use bitcoin::TapLeafHash;
-    use bitvm::treepp::*;
     use rand::{Rng, RngCore, SeedableRng};
     use rand_chacha::ChaCha20Rng;
     use sha2::Digest;

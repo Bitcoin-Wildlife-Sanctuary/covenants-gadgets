@@ -3,6 +3,15 @@
 
 #![deny(missing_docs)]
 
+pub(crate) mod treepp {
+    pub use bitcoin_script::{define_pushable, script};
+    #[cfg(test)]
+    pub use bitcoin_scriptexec::execute_script;
+
+    define_pushable!();
+    pub use bitcoin::ScriptBuf as Script;
+}
+
 /// Modules for some internal structures such as C++-like integers and Bitcoin VI.
 pub mod internal_structures;
 

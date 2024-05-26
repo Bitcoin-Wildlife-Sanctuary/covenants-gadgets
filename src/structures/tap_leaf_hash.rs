@@ -1,6 +1,6 @@
+use crate::treepp::*;
 use bitcoin::secp256k1::ThirtyTwoByteHash;
 use bitcoin::TapLeafHash;
-use bitvm::treepp::*;
 
 /// Gadget for tap leaf hash.
 pub struct TapLeafHashGadget;

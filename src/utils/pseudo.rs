@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use bitvm::treepp::*;
+use crate::treepp::*;
 
 /// Doing OP_CAT one time to concatenate 2 elements together.
 pub fn OP_CAT2() -> Script {

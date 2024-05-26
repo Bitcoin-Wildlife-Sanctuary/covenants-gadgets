@@ -1,6 +1,6 @@
+use crate::treepp::*;
 use bitcoin::secp256k1::ThirtyTwoByteHash;
 use bitcoin::Txid;
-use bitvm::treepp::*;
 
 /// Gadget for the transaction ID (txid).
 pub struct TxIdGadget;

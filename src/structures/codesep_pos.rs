@@ -1,6 +1,6 @@
 use crate::internal_structures::cpp_int_32::CppInt32Gadget;
+use crate::treepp::*;
 use bitcoin::opcodes::all::OP_PUSHBYTES_4;
-use bitvm::treepp::*;
 
 /// Gadget for the code separator position.
 pub struct CodeSepPosGadget;

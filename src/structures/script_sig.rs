@@ -1,4 +1,4 @@
-use bitvm::treepp::*;
+use crate::treepp::*;
 
 /// Gadget for the script signature.
 ///

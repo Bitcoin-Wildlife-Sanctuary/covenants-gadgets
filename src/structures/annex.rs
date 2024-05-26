@@ -1,6 +1,6 @@
+use crate::treepp::*;
 use bitcoin::consensus::Encodable;
 use bitcoin::sighash::Annex;
-use bitvm::treepp::*;
 
 /// Gadget for the annex (currently unused).
 pub struct AnnexGadget;

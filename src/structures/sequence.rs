@@ -1,7 +1,7 @@
 use crate::internal_structures::cpp_int_32::CppInt32Gadget;
+use crate::treepp::*;
 use crate::utils::push_u32_4bytes;
 use bitcoin::Sequence;
-use bitvm::treepp::*;
 
 /// Gadget for the input sequence.
 pub struct SequenceGadget;
@@ -28,10 +28,10 @@ impl SequenceGadget {
 #[cfg(test)]
 mod test {
     use crate::structures::sequence::SequenceGadget;
+    use crate::treepp::*;
     use crate::utils::pseudo::OP_CAT3;
     use bitcoin::consensus::Encodable;
     use bitcoin::Sequence;
-    use bitvm::treepp::*;
     use rand::{Rng, SeedableRng};
     use rand_chacha::ChaCha20Rng;
     use sha2::digest::Update;

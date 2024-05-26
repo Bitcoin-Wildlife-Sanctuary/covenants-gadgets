@@ -1,5 +1,5 @@
+use crate::treepp::*;
 use crate::utils::push_u32_4bytes;
-use bitvm::treepp::*;
 
 /// Gadget for C++-like 32-bit signed integer.
 pub struct CppInt32Gadget;
@@ -52,8 +52,8 @@ impl CppInt32Gadget {
 #[cfg(test)]
 mod test {
     use crate::internal_structures::cpp_int_32::CppInt32Gadget;
+    use crate::treepp::*;
     use crate::utils::push_u32_4bytes;
-    use bitvm::treepp::*;
 
     #[test]
     fn test_cpp_int32_from_bitcoin_integer() {

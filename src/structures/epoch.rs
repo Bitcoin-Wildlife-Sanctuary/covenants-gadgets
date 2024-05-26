@@ -1,4 +1,4 @@
-use bitvm::treepp::*;
+use crate::treepp::*;
 
 /// Gadget for the epoch, the leading byte 0x00 in the taproot CheckSigVerify.
 pub struct EpochGadget;

@@ -1,10 +1,10 @@
 use crate::internal_structures::variable_length_integer::VariableLengthIntegerGadget;
+use crate::treepp::*;
 use bitcoin::opcodes::all::{
     OP_PUSHBYTES_20, OP_PUSHBYTES_22, OP_PUSHBYTES_32, OP_PUSHBYTES_34, OP_PUSHNUM_1,
 };
 use bitcoin::opcodes::OP_0;
 use bitcoin::ScriptBuf;
-use bitvm::treepp::*;
 
 /// Wrapper for supported script pub keys.
 pub enum ScriptPubKey {
@@ -124,13 +124,13 @@ impl ScriptPubKeyGadget {
 #[cfg(test)]
 mod test {
     use crate::structures::script_pub_key::{ScriptPubKey, ScriptPubKeyGadget};
+    use crate::treepp::*;
     use crate::utils::pseudo::OP_CAT3;
     use bitcoin::consensus::Encodable;
     use bitcoin::hashes::Hash;
     use bitcoin::key::TweakedPublicKey;
     use bitcoin::secp256k1::Secp256k1;
     use bitcoin::{ScriptBuf, WPubkeyHash, WScriptHash, XOnlyPublicKey};
-    use bitvm::treepp::*;
     use rand::{RngCore, SeedableRng};
     use rand_chacha::ChaCha20Rng;
     use sha2::digest::Update;

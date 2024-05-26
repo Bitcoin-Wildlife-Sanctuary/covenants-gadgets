@@ -1,7 +1,7 @@
 use crate::internal_structures::cpp_int_32::CppInt32Gadget;
+use crate::treepp::*;
 use crate::utils::push_u32_4bytes;
 use bitcoin::{absolute, relative};
-use bitvm::treepp::*;
 
 /// Gadget for the transaction's locktime.
 pub struct LockTimeGadget;

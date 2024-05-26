@@ -1,6 +1,6 @@
 use crate::internal_structures::cpp_uint_64::CppUInt64Gadget;
+use crate::treepp::*;
 use bitcoin::Amount;
-use bitvm::treepp::*;
 
 /// Gadget for the amount.
 pub struct AmountGadget;
@@ -31,10 +31,10 @@ impl AmountGadget {
 #[cfg(test)]
 mod test {
     use crate::structures::amount::AmountGadget;
+    use crate::treepp::*;
     use crate::utils::pseudo::OP_CAT3;
     use bitcoin::consensus::Encodable;
     use bitcoin::Amount;
-    use bitvm::treepp::*;
     use rand::{RngCore, SeedableRng};
     use rand_chacha::ChaCha20Rng;
     use sha2::digest::Update;

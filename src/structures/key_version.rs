@@ -1,4 +1,4 @@
-use bitvm::treepp::*;
+use crate::treepp::*;
 
 /// Gadget for the key version used in the taproot CheckSigVerify extension.
 pub struct KeyVersionGadget;

@@ -1,4 +1,4 @@
-use bitvm::treepp::*;
+use crate::treepp::*;
 use sha2::Digest;
 
 /// Enum for different hashtags used in tagged hashes.
@@ -67,9 +67,9 @@ pub fn get_hashed_tag(tag: &'static str) -> Vec<u8> {
 #[cfg(test)]
 mod test {
     use crate::structures::tagged_hash::{HashTag, TaggedHashGadget};
+    use crate::treepp::*;
     use bitcoin::hashes::Hash;
     use bitcoin::TapSighash;
-    use bitvm::treepp::*;
     use rand::{RngCore, SeedableRng};
     use rand_chacha::ChaCha20Rng;
 

@@ -1,5 +1,5 @@
+use crate::treepp::*;
 use bitcoin::TapSighashType;
-use bitvm::treepp::*;
 
 /// Gadget for the hash type.
 pub struct HashTypeGadget;

@@ -1,6 +1,6 @@
+use crate::treepp::*;
 use crate::utils::pseudo::OP_CAT2;
 use bitcoin::OutPoint;
-use bitvm::treepp::*;
 
 pub use crate::structures::txid::TxIdGadget as Step1TxIdGadget;
 
@@ -22,12 +22,12 @@ impl OutPointGadget {
 
 #[cfg(test)]
 mod test {
+    use crate::treepp::*;
     use crate::utils::pseudo::OP_CAT3;
     use crate::wizards::outpoint::OutPointGadget;
     use bitcoin::consensus::Encodable;
     use bitcoin::hashes::Hash;
     use bitcoin::{OutPoint, Txid};
-    use bitvm::treepp::*;
     use rand::{Rng, SeedableRng};
     use rand_chacha::ChaCha20Rng;
     use sha2::digest::Update;

@@ -1,6 +1,6 @@
+use crate::treepp::*;
 use crate::utils::pseudo::OP_CAT2;
 use bitcoin::TxOut;
-use bitvm::treepp::*;
 
 pub use crate::structures::amount::AmountGadget as Step1AmountGadget;
 
@@ -24,6 +24,7 @@ impl TxOutGadget {
 
 #[cfg(test)]
 mod test {
+    use crate::treepp::*;
     use crate::utils::pseudo::OP_CAT3;
     use crate::wizards::tx_out;
     use bitcoin::consensus::Encodable;
@@ -31,7 +32,6 @@ mod test {
     use bitcoin::key::TweakedPublicKey;
     use bitcoin::secp256k1::Secp256k1;
     use bitcoin::{Amount, ScriptBuf, TxOut, WPubkeyHash, WScriptHash, XOnlyPublicKey};
-    use bitvm::treepp::*;
     use rand::{RngCore, SeedableRng};
     use rand_chacha::ChaCha20Rng;
     use sha2::digest::Update;

@@ -1,5 +1,5 @@
+use crate::treepp::*;
 use bitcoin::opcodes::all::{OP_PUSHBYTES_4, OP_PUSHBYTES_8};
-use bitvm::treepp::*;
 
 /// Modules for some pseudo opcodes.
 pub mod pseudo;

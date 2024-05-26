@@ -1,6 +1,6 @@
+use crate::treepp::*;
 use crate::utils::pseudo::OP_CAT4;
 use bitcoin::Transaction;
-use bitvm::treepp::*;
 
 pub use crate::structures::version::VersionGadget as Step1VersionGadget;
 
@@ -44,11 +44,11 @@ impl TxGadget {
 
 #[cfg(test)]
 mod test {
+    use crate::treepp::*;
     use crate::utils::pseudo::{OP_CAT2, OP_CAT3};
     use crate::wizards::tx;
     use bitcoin::consensus::{Decodable, Encodable};
     use bitcoin::Transaction;
-    use bitvm::treepp::*;
 
     #[test]
     fn test_tx() {

@@ -1,8 +1,8 @@
+use crate::treepp::*;
 use bitcoin::consensus::Encodable;
 use bitcoin::opcodes::all::{
     OP_PUSHBYTES_1, OP_PUSHBYTES_3, OP_PUSHBYTES_5, OP_PUSHBYTES_9, OP_PUSHNUM_1, OP_PUSHNUM_NEG1,
 };
-use bitvm::treepp::*;
 
 /// Gadget for variable length integer used in Bitcoin consensus encoding.
 pub struct VariableLengthIntegerGadget;

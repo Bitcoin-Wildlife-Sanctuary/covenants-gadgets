@@ -1,6 +1,6 @@
+use crate::treepp::*;
 use crate::utils::push_u32_4bytes;
 use bitcoin::blockdata::transaction::Version;
-use bitvm::treepp::*;
 
 /// Gadget for the transaction version number.
 pub struct VersionGadget;
