@@ -1,7 +1,6 @@
 use crate::internal_structures::cpp_int_32::CppInt32Gadget;
 use crate::treepp::*;
 use crate::utils::{push_u32_4bytes, push_u64_8bytes};
-use bitvm::pseudo::OP_256MUL;
 
 /// Gadget for 64-bit unsigned integer.
 pub struct CppUInt64Gadget;
@@ -93,12 +92,23 @@ impl CppUInt64Gadget {
     }
 }
 
+/// The top stack item is multiplied by 256
+/// adapted from https://github.com/BitVM/BitVM/blob/main/src/pseudo.rs
+#[allow(non_snake_case)]
+pub fn OP_256MUL() -> Script {
+    script! {
+        OP_DUP OP_ADD OP_DUP OP_ADD
+        OP_DUP OP_ADD OP_DUP OP_ADD
+        OP_DUP OP_ADD OP_DUP OP_ADD
+        OP_DUP OP_ADD OP_DUP OP_ADD
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::internal_structures::cpp_uint_64::CppUInt64Gadget;
     use crate::treepp::*;
     use crate::utils::push_u64_8bytes;
-    use bitvm::bigint::U64;
 
     #[test]
     fn test_cpp_uint64_from_bitcoin_integer() {
@@ -124,28 +134,6 @@ mod test {
             { push_u64_8bytes(0x1234567878345612) }
             OP_EQUAL
         };
-        let res = execute_script(script);
-        assert!(res.success);
-    }
-
-    #[test]
-    fn test_cpp_uint64_from_u64_in_16bit_limbs() {
-        let script = script! {
-            { U64::push_u64_le(&[100_000_000u64]) }
-            { U64::push_u64_le(&[1234]) }
-            { U64::push_u64_le(&[5678]) }
-
-            { U64::toaltstack() }
-            { U64::mul() }
-
-            { U64::fromaltstack() }
-            { U64::add(1, 0) }
-
-            { CppUInt64Gadget::from_u64_in_16bit_limbs() }
-            { push_u64_8bytes(100_000_000u64 * 1234 + 5678) }
-            OP_EQUAL
-        };
-
         let res = execute_script(script);
         assert!(res.success);
     }
