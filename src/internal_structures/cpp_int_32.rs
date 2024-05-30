@@ -10,6 +10,13 @@ impl CppInt32Gadget {
         push_u32_4bytes(v)
     }
 
+    /// Construct a 32-bit signed integer from provided data of 4 bytes.
+    pub fn from_provided() -> Script {
+        script! {
+            OP_SIZE 4 OP_EQUALVERIFY
+        }
+    }
+
     /// Construct a 32-bit signed integer from a Bitcoin integer on the stack.
     pub fn from_bitcoin_integer() -> Script {
         script! {

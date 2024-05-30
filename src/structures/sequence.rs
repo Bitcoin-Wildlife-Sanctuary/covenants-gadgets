@@ -12,6 +12,13 @@ impl SequenceGadget {
         push_u32_4bytes(sequence.to_consensus_u32())
     }
 
+    /// Construct the input sequence from provided data of 4 bytes.
+    pub fn from_provided() -> Script {
+        script! {
+            OP_SIZE 4 OP_EQUALVERIFY
+        }
+    }
+
     /// Construct the input sequence from a Bitcoin integer on the stack.
     pub fn from_bitcoin_integer() -> Script {
         CppInt32Gadget::from_bitcoin_integer()

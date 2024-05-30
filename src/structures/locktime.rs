@@ -27,6 +27,13 @@ impl LockTimeGadget {
         }
     }
 
+    /// Construct the locktime from provided data of 36 bytes.
+    pub fn from_provided() -> Script {
+        script! {
+            OP_SIZE 4 OP_EQUALVERIFY
+        }
+    }
+
     /// Construct the locktime using the provided unix timestamp.
     ///
     /// It checks if the provided value is greater or equal to 500000000,

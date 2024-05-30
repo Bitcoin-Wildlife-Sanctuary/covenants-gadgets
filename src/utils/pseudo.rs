@@ -36,3 +36,10 @@ pub fn OP_CAT6() -> Script {
         OP_CAT OP_CAT OP_CAT OP_CAT OP_CAT
     }
 }
+
+/// Pull one element from the hints.
+pub fn OP_HINT() -> Script {
+    script! {
+        OP_DEPTH OP_1SUB OP_ROLL
+    }
+}

@@ -18,6 +18,13 @@ impl OutPointGadget {
             OP_CAT2
         }
     }
+
+    /// Construct the input outpoint from provided data of 36 bytes.
+    pub fn from_provided() -> Script {
+        script! {
+            OP_SIZE 36 OP_EQUALVERIFY
+        }
+    }
 }
 
 #[cfg(test)]

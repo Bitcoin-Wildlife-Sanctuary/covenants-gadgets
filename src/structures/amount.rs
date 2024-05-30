@@ -11,6 +11,13 @@ impl AmountGadget {
         CppUInt64Gadget::from_constant(amount.to_sat())
     }
 
+    /// Construct the amount from provided data of 8 bytes.
+    pub fn from_provided() -> Script {
+        script! {
+            OP_SIZE 8 OP_EQUALVERIFY
+        }
+    }
+
     /// Construct the amount from one Bitcoin integer.
     pub fn from_bitcoin_integer() -> Script {
         CppUInt64Gadget::from_positive_bitcoin_integer()

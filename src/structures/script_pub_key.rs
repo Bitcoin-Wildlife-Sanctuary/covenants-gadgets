@@ -102,21 +102,17 @@ impl ScriptPubKeyGadget {
 
     /// Construct the script public key from the provided data on the stack.
     ///
-    /// It checks if the provided data has the right number of bytes.
-    pub fn from_provided(script_pub_key_type: ScriptPubKeyType) -> Script {
-        match script_pub_key_type {
-            ScriptPubKeyType::P2WPKH => script! {
-                OP_DUP OP_SIZE 20 OP_EQUALVERIFY
-                OP_PUSHBYTES_1 OP_PUSHBYTES_22 OP_SWAP OP_CAT
-            },
-            ScriptPubKeyType::P2WSH => script! {
-                OP_DUP OP_SIZE 32 OP_EQUALVERIFY
-                OP_PUSHBYTES_1 OP_PUSHBYTES_34 OP_SWAP OP_CAT
-            },
-            ScriptPubKeyType::P2TR => script! {
-                OP_DUP OP_SIZE 32 OP_EQUALVERIFY
-                OP_PUSHBYTES_1 OP_PUSHBYTES_34 OP_SWAP OP_CAT
-            },
+    /// It accepts 20 bytes (P2WPKH) and 33 bytes ("0" + P2WSH or "1" + P2TR or others)
+    pub fn from_provided() -> Script {
+        script! {
+            OP_SIZE 20 OP_EQUAL
+            OP_IF
+                OP_PUSHBYTES_2 OP_PUSHBYTES_22 OP_PUSHBYTES_0
+            OP_ELSE
+                OP_SIZE 33 OP_EQUALVERIFY
+                OP_PUSHBYTES_1 OP_PUSHBYTES_34
+            OP_ENDIF
+            OP_SWAP OP_CAT
         }
     }
 }
