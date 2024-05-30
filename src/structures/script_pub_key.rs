@@ -102,14 +102,14 @@ impl ScriptPubKeyGadget {
 
     /// Construct the script public key from the provided data on the stack.
     ///
-    /// It accepts 20 bytes (P2WPKH) and 33 bytes ("0" + P2WSH or "1" + P2TR or others)
+    /// It accepts 22 bytes (P2WPKH) and 34 bytes (P2WSH or P2TR).
     pub fn from_provided() -> Script {
         script! {
-            OP_SIZE 20 OP_EQUAL
+            OP_SIZE 22 OP_EQUAL
             OP_IF
-                OP_PUSHBYTES_2 OP_PUSHBYTES_22 OP_PUSHBYTES_0
+                OP_PUSHBYTES_1 OP_PUSHBYTES_22
             OP_ELSE
-                OP_SIZE 33 OP_EQUALVERIFY
+                OP_SIZE 34 OP_EQUALVERIFY
                 OP_PUSHBYTES_1 OP_PUSHBYTES_34
             OP_ENDIF
             OP_SWAP OP_CAT
