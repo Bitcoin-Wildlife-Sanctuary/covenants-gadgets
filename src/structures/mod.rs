@@ -42,6 +42,3 @@ pub mod txid;
 
 /// Module for the transaction version.
 pub mod version;
-
-/// Module for stack hash.
-pub mod stack_hash;

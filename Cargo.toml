@@ -11,7 +11,7 @@ rand_chacha = "0.3.1"
 sha2 = "0.10.8"
 
 [dev-dependencies]
-bitcoin-scriptexec = { git = "https://github.com/Bitcoin-Wildlife-Sanctuary/rust-bitcoin-scriptexec" }
+bitcoin-scriptexec = { git = "https://github.com/Bitcoin-Wildlife-Sanctuary/rust-bitcoin-scriptexec", features = ["debug"] }
 hex = "0.4.3"
 
 [profile.dev]

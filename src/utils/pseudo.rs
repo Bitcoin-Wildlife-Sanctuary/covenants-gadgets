@@ -43,24 +43,3 @@ pub fn OP_HINT() -> Script {
         OP_DEPTH OP_1SUB OP_ROLL
     }
 }
-
-/// Backup the top two elements before OP_CAT_HASH
-pub fn OP_CAT_BACKUP() -> Script {
-    script! {
-        OP_2DUP OP_TOALTSTACK OP_TOALTSTACK
-    }
-}
-
-/// Cat and Hash
-pub fn OP_CAT_HASH() -> Script {
-    script! {
-        OP_CAT OP_SHA256
-    }
-}
-
-/// Restore after OP_CAT_HASH
-pub fn OP_CAT_RESTORE() -> Script {
-    script! {
-        OP_FROMALTSTACK OP_FROMALTSTACK
-    }
-}
