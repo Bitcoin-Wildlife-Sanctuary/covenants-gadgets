@@ -3,6 +3,8 @@ use bitcoin::opcodes::all::{OP_PUSHBYTES_4, OP_PUSHBYTES_8};
 
 /// Modules for some pseudo opcodes.
 pub mod pseudo;
+/// Module for stack hash.
+pub mod stack_hash;
 
 /// Push a 32-bit unsigned integer as a 4-byte string on the stack.
 pub fn push_u32_4bytes(v: u32) -> Script {
