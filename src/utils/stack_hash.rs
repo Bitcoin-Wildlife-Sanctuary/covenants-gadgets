@@ -11,8 +11,8 @@ impl StackHash {
     pub fn hash_drop(num: usize) -> Script {
         assert!(num > 0);
         script! {
-            OP_SHA256
-            for _ in 1..num {
+            { num } OP_SHA256
+            for _ in 0..num {
                 OP_CAT OP_SHA256
             }
         }
@@ -22,9 +22,8 @@ impl StackHash {
     pub fn hash_nodrop(num: usize) -> Script {
         assert!(num > 0);
         script! {
-            OP_DUP OP_TOALTSTACK
-            OP_SHA256
-            for _ in 1..num {
+            { num } OP_SHA256
+            for _ in 0..num {
                 OP_OVER OP_TOALTSTACK
                 OP_CAT OP_SHA256
             }
