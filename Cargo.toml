@@ -9,10 +9,13 @@ bitcoin-script = { git = "https://github.com/Bitcoin-Wildlife-Sanctuary/rust-bit
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 sha2 = "0.10.8"
+once_cell = "1.19.0"
+anyhow = "1.0.86"
+hex = "0.4.3"
+bitcoin-scriptexec = { git = "https://github.com/Bitcoin-Wildlife-Sanctuary/rust-bitcoin-scriptexec", features = ["debug"] }
 
 [dev-dependencies]
-bitcoin-scriptexec = { git = "https://github.com/Bitcoin-Wildlife-Sanctuary/rust-bitcoin-scriptexec", features = ["debug"] }
-hex = "0.4.3"
+bitcoin-simulator = { git = "https://github.com/Bitcoin-Wildlife-Sanctuary/bitcoin-simulator" }
 
 [profile.dev]
 opt-level = 3
