@@ -61,7 +61,6 @@ pub mod utils;
 pub mod bitcoin_script;
 
 /// Test module
-#[cfg(test)]
 pub mod test;
 
 /// The dust amount for a P2WSH transaction.

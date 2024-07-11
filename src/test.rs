@@ -15,6 +15,7 @@ use rand_chacha::ChaCha20Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+/// Run simulation test.
 pub fn simulation_test<T: CovenantProgram>(
     test_generator: &mut impl FnMut(&T::State) -> (usize, T::Input),
 ) {
