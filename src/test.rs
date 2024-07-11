@@ -27,6 +27,7 @@ pub struct SimulationInstruction<T: CovenantProgram> {
 
 /// Run simulation test.
 pub fn simulation_test<T: CovenantProgram>(
+    repeat: usize,
     test_generator: &mut impl FnMut(&T::State) -> Option<SimulationInstruction<T>>,
 ) {
     let policy = Policy::default().set_fee(7).set_max_tx_weight(400000);
@@ -105,7 +106,7 @@ pub fn simulation_test<T: CovenantProgram>(
     #[cfg(feature = "debug")]
     eprintln!("{:?}", old_state);
 
-    for _ in 0..100 {
+    for _ in 0..repeat {
         let mut has_deposit_input = prng.borrow_mut().gen::<bool>();
 
         if old_balance < 700_000u64 {
