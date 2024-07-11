@@ -4,7 +4,7 @@
 #![deny(missing_docs)]
 
 /// The treepp implementation.
-pub mod treepp {
+pub(crate) mod treepp {
     #![allow(missing_docs)]
 
     pub use bitcoin_script::{define_pushable, script};
@@ -19,7 +19,6 @@ use treepp::*;
 
 use crate::bitcoin_script::covenant;
 use crate::structures::tagged_hash::get_hashed_tag;
-use crate::treepp::pushable::Pushable;
 use anyhow::Result;
 use bitcoin::absolute::LockTime;
 use bitcoin::consensus::Encodable;
@@ -77,10 +76,10 @@ pub static TAPROOT_SPEND_INFOS: OnceLock<Mutex<BTreeMap<&'static str, TaprootSpe
 /// Trait for a covenant program.
 pub trait CovenantProgram {
     /// Type of the state for this covenant program.
-    type State: Pushable + Debug + Clone;
+    type State: Into<Script> + Debug + Clone;
 
     /// Type of input (could be an enum).
-    type Input: Pushable + Clone;
+    type Input: Into<Script> + Clone;
 
     /// Unique name for caching.
     const CACHE_NAME: &'static str;
@@ -384,10 +383,13 @@ pub fn get_tx<T: CovenantProgram>(
     script_execution_witness.push(info.old_randomizer.to_le_bytes().to_vec());
 
     // application-specific witnesses
+    let old_state_in_script: Script = old_state.clone().into();
+    let new_state_in_script: Script = new_state.clone().into();
+    let input_in_script: Script = input.clone().into();
     let application_witness = convert_to_witness(script! {
-        { old_state.clone() }
-        { new_state.clone() }
-        { input.clone() }
+        { old_state_in_script }
+        { new_state_in_script }
+        { input_in_script }
     })
     .unwrap();
 
