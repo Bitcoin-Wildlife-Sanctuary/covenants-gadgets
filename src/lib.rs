@@ -3,12 +3,16 @@
 
 #![deny(missing_docs)]
 
-pub(crate) mod treepp {
+/// The treepp implementation.
+pub mod treepp {
+    #![allow(missing_docs)]
+
     pub use bitcoin_script::{define_pushable, script};
     #[cfg(test)]
     pub use bitcoin_scriptexec::execute_script;
 
     define_pushable!();
+
     pub use bitcoin::ScriptBuf as Script;
 }
 use treepp::*;
