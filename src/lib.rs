@@ -91,6 +91,9 @@ pub trait CovenantProgram {
     /// Get all the scripts of this application.
     fn get_all_scripts() -> BTreeMap<usize, Script>;
 
+    /// Get the common prefix script.
+    fn get_common_prefix() -> Script;
+
     /// Run the program to move from the previous state to the new state.
     fn run(id: usize, old_state: &Self::State, input: &Self::Input) -> Result<Self::State>;
 }
@@ -135,11 +138,14 @@ pub fn compute_taproot_spend_info<T: CovenantProgram>() -> TaprootSpendInfo {
         .unwrap();
     let scripts = map.entry(T::CACHE_NAME).or_insert_with(T::get_all_scripts);
 
+    let common_prefix = T::get_common_prefix();
+
     let taproot_builder = TaprootBuilder::with_huffman_tree(scripts.iter().map(|(_, script)| {
         (
             1,
             script! {
                 covenant
+                { common_prefix.clone() }
                 { script.clone() }
             },
         )
@@ -195,8 +201,11 @@ pub fn get_control_block_and_script<T: CovenantProgram>(id: usize) -> (Vec<u8>, 
         .unwrap()
         .clone();
 
+    let common_prefix = T::get_common_prefix();
+
     let script = script! {
         covenant
+        { common_prefix.clone() }
         { script.clone() }
     };
 
