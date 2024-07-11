@@ -15,11 +15,21 @@ use rand_chacha::ChaCha20Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+/// The instruction to simulate the next step.
+pub struct SimulationInstruction<T: CovenantProgram> {
+    /// The index of the program to be executed.
+    pub program_index: usize,
+    /// The fee to reserve for the transaction fee.
+    pub fee: usize,
+    /// The program input.
+    pub program_input: T::Input,
+}
+
 /// Run simulation test.
 pub fn simulation_test<T: CovenantProgram>(
-    test_generator: &mut impl FnMut(&T::State) -> Option<(usize, T::Input)>,
+    test_generator: &mut impl FnMut(&T::State) -> Option<SimulationInstruction<T>>,
 ) {
-    let policy = Policy::default().set_fee(1).set_max_tx_weight(400000);
+    let policy = Policy::default().set_fee(7).set_max_tx_weight(400000);
 
     let prng = Rc::new(RefCell::new(ChaCha20Rng::seed_from_u64(0)));
     let get_rand_txid = || {
@@ -95,7 +105,11 @@ pub fn simulation_test<T: CovenantProgram>(
     eprintln!("{:?}", old_state);
 
     for _ in 0..100 {
-        let has_deposit_input = prng.borrow_mut().gen::<bool>();
+        let mut has_deposit_input = prng.borrow_mut().gen::<bool>();
+
+        if old_balance < 700_000u64 {
+            has_deposit_input = true;
+        }
 
         // If there is a deposit input
         let deposit_input = if has_deposit_input {
@@ -132,11 +146,21 @@ pub fn simulation_test<T: CovenantProgram>(
             None
         };
 
+        let next_step = test_generator(&old_state);
+        if next_step.is_none() {
+            return;
+        }
+        let SimulationInstruction::<T> {
+            program_index: id,
+            program_input: input,
+            fee,
+        } = next_step.unwrap();
+
         let mut new_balance = old_balance;
         if deposit_input.is_some() {
             new_balance += 123_456_000;
         }
-        new_balance -= 500; // as for transaction fee
+        new_balance -= fee as u64; // as for transaction fee
         new_balance -= DUST_AMOUNT;
 
         let info = CovenantInput {
@@ -148,12 +172,6 @@ pub fn simulation_test<T: CovenantProgram>(
             optional_deposit_input: deposit_input,
             new_balance,
         };
-
-        let next_step =  test_generator(&old_state);
-        if next_step.is_none() {
-            return;
-        }
-        let (id, input) = next_step.unwrap();
 
         let new_state = T::run(id, &old_state, &input).unwrap();
 
