@@ -17,7 +17,7 @@ use std::rc::Rc;
 
 /// Run simulation test.
 pub fn simulation_test<T: CovenantProgram>(
-    test_generator: &mut impl FnMut(&T::State) -> (usize, T::Input),
+    test_generator: &mut impl FnMut(&T::State) -> Option<(usize, T::Input)>,
 ) {
     let policy = Policy::default().set_fee(1).set_max_tx_weight(400000);
 
@@ -149,7 +149,11 @@ pub fn simulation_test<T: CovenantProgram>(
             new_balance,
         };
 
-        let (id, input) = test_generator(&old_state);
+        let next_step =  test_generator(&old_state);
+        if next_step.is_none() {
+            return;
+        }
+        let (id, input) = next_step.unwrap();
 
         let new_state = T::run(id, &old_state, &input).unwrap();
 
