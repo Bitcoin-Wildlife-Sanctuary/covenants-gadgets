@@ -102,6 +102,7 @@ pub fn simulation_test<T: CovenantProgram>(
     let mut old_tx_outpoint1 = init_tx.input[0].previous_output;
     let mut old_tx_outpoint2 = None;
 
+    #[cfg(feature = "debug")]
     eprintln!("{:?}", old_state);
 
     for _ in 0..100 {
@@ -190,6 +191,7 @@ pub fn simulation_test<T: CovenantProgram>(
         old_balance = new_balance;
         old_txid = tx_template.tx.compute_txid();
 
+        #[cfg(feature = "debug")]
         eprintln!("{:?}", old_state);
 
         old_tx_outpoint1 = tx_template.tx.input[0].previous_output;
