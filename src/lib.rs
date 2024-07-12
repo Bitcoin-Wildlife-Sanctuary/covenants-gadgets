@@ -234,7 +234,7 @@ pub fn get_tx<T: CovenantProgram>(
 
     // Initialize a new transaction.
     let mut tx = Transaction {
-        version: Version::ONE,
+        version: Version::TWO,
         lock_time: LockTime::ZERO,
         input: vec![],
         output: vec![],

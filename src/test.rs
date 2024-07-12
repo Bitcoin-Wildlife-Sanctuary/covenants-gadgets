@@ -55,7 +55,7 @@ pub fn simulation_test<T: CovenantProgram>(
 
     // initialize the counter and accept it unconditionally
     let init_tx = Transaction {
-        version: Version::ONE,
+        version: Version::TWO,
         lock_time: LockTime::ZERO,
         input: vec![TxIn {
             previous_output: OutPoint {
@@ -116,7 +116,7 @@ pub fn simulation_test<T: CovenantProgram>(
         // If there is a deposit input
         let deposit_input = if has_deposit_input {
             let fee_tx = Transaction {
-                version: Version::ONE,
+                version: Version::TWO,
                 lock_time: LockTime::ZERO,
                 input: vec![TxIn {
                     previous_output: OutPoint {
