@@ -244,7 +244,7 @@ pub fn get_tx<T: CovenantProgram>(
     tx.input.push(TxIn {
         previous_output: OutPoint::new(info.old_txid.clone(), 0),
         script_sig: ScriptBuf::new(),
-        sequence: Sequence::default(),
+        sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
         witness: Witness::new(), // placeholder
     });
 

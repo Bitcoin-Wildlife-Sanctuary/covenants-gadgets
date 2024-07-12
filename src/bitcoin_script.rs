@@ -20,7 +20,7 @@ pub fn step1() -> Script {
 
         { tap_csv_preimage::Step1EpochGadget::default() }
         { tap_csv_preimage::Step2HashTypeGadget::from_constant(&TapSighashType::AllPlusAnyoneCanPay) }
-        { tap_csv_preimage::Step3VersionGadget::from_constant(&Version::ONE) }
+        { tap_csv_preimage::Step3VersionGadget::from_constant(&Version::TWO) }
         { tap_csv_preimage::Step4LockTimeGadget::from_constant_absolute(&LockTime::ZERO) }
         OP_CAT4
     }
@@ -170,8 +170,8 @@ pub fn step4() -> Script {
         OP_PUSHBYTES_1 OP_PUSHBYTES_34 OP_SWAP
         OP_CAT3
 
-        // require the input sequence number be 0xffffffff
-        { tap_csv_preimage::step8_data_input_part_if_anyonecanpay::Step4SequenceGadget::from_constant(&Sequence::default()) }
+        // require the input sequence number be 0xfffffffd
+        { tap_csv_preimage::step8_data_input_part_if_anyonecanpay::Step4SequenceGadget::from_constant(&Sequence::ENABLE_RBF_NO_LOCKTIME) }
         OP_CAT2
 
         OP_FROMALTSTACK OP_SWAP
@@ -298,7 +298,7 @@ pub fn step6() -> Script {
 ///
 pub fn step7() -> Script {
     script! {
-        { tx::Step1VersionGadget::from_constant(&Version::ONE) }
+        { tx::Step1VersionGadget::from_constant(&Version::TWO) }
 
         // Below all are related to the old transaction.
 
@@ -314,12 +314,12 @@ pub fn step7() -> Script {
         OP_SIZE 0 OP_EQUAL
         OP_IF
             OP_DROP
-            OP_PUSHBYTES_5 OP_PUSHBYTES_0 OP_INVALIDOPCODE OP_INVALIDOPCODE OP_INVALIDOPCODE OP_INVALIDOPCODE
+            OP_PUSHBYTES_5 OP_PUSHBYTES_0 OP_RETURN_253 OP_INVALIDOPCODE OP_INVALIDOPCODE OP_INVALIDOPCODE
             OP_CAT
             { tx::Step2InCounterGadget::from_constant(1) }
         OP_ELSE
             OP_TOALTSTACK
-            OP_PUSHBYTES_5 OP_PUSHBYTES_0 OP_INVALIDOPCODE OP_INVALIDOPCODE OP_INVALIDOPCODE OP_INVALIDOPCODE
+            OP_PUSHBYTES_5 OP_PUSHBYTES_0 OP_RETURN_253 OP_INVALIDOPCODE OP_INVALIDOPCODE OP_INVALIDOPCODE
             OP_DUP
             OP_FROMALTSTACK OP_SWAP
             OP_CAT4

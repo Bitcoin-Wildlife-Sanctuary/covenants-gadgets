@@ -63,7 +63,7 @@ pub fn simulation_test<T: CovenantProgram>(
                 vout: 0,
             },
             script_sig: ScriptBuf::default(),
-            sequence: Sequence::default(),
+            sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
             witness: Witness::new(),
         }],
         output: vec![
@@ -124,7 +124,7 @@ pub fn simulation_test<T: CovenantProgram>(
                         vout: 0xffffffffu32,
                     },
                     script_sig: ScriptBuf::new(),
-                    sequence: Sequence::default(),
+                    sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
                     witness: Witness::new(),
                 }], // a random input is needed to avoid TXID collision.
                 output: vec![TxOut {
@@ -141,7 +141,7 @@ pub fn simulation_test<T: CovenantProgram>(
                     vout: 0,
                 },
                 script_sig: ScriptBuf::new(),
-                sequence: Sequence::default(),
+                sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
                 witness: trivial_p2wsh_witness.clone(),
             })
         } else {
