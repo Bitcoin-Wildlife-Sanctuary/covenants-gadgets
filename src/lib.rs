@@ -88,6 +88,9 @@ pub trait CovenantProgram {
     /// Compute the state hash, which is application-specific.
     fn get_hash(state: &Self::State) -> Vec<u8>;
 
+    /// Compute the merged state hash, say hash(old state hash + new state)
+    fn get_merged_hash(state: &Self::State, hash_bytes: Vec<u8>) -> Vec<u8>;
+
     /// Get all the scripts of this application.
     fn get_all_scripts() -> BTreeMap<usize, Script>;
 
