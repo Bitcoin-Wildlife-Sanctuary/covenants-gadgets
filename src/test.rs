@@ -27,6 +27,7 @@ pub struct SimulationInstruction<T: CovenantProgram> {
 
 /// Run simulation test.
 pub fn simulation_test<T: CovenantProgram>(
+    is_check: bool,
     repeat: usize,
     test_generator: &mut impl FnMut(&T::State) -> Option<SimulationInstruction<T>>,
 ) {
@@ -43,7 +44,7 @@ pub fn simulation_test<T: CovenantProgram>(
 
     let init_state = T::new();
     let init_state_hash = T::get_hash(&init_state);
-    let script_pub_key = get_script_pub_key::<T>();
+    let script_pub_key = get_script_pub_key::<T>(is_check);
 
     let init_randomizer = 12u32;
 
@@ -177,7 +178,8 @@ pub fn simulation_test<T: CovenantProgram>(
 
         let new_state = T::run(id, &old_state, &input).unwrap();
 
-        let (tx_template, randomizer) = get_tx::<T>(&info, id, &old_state, &new_state, &input);
+        let (tx_template, randomizer) =
+            get_tx::<T>(&info, id, &old_state, &new_state, &input, is_check);
 
         // Check if the new transaction conforms to the requirement.
         // If so, insert this transaction unconditionally.

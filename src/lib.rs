@@ -123,7 +123,7 @@ pub struct CovenantInput {
 }
 
 /// Initialize the taproot spend info.
-pub fn compute_taproot_spend_info<T: CovenantProgram>() -> TaprootSpendInfo {
+pub fn compute_taproot_spend_info<T: CovenantProgram>(is_check: bool) -> TaprootSpendInfo {
     let secp = bitcoin::secp256k1::Secp256k1::new();
     let internal_key = UntweakedPublicKey::from(
         bitcoin::secp256k1::PublicKey::from_str(
@@ -144,7 +144,11 @@ pub fn compute_taproot_spend_info<T: CovenantProgram>() -> TaprootSpendInfo {
         (
             1,
             script! {
-                covenant
+                if is_check {
+                    covenant
+                } else {
+                    covenant_nocheck
+                }
                 { common_prefix.clone() }
                 { script.clone() }
             },
@@ -157,7 +161,7 @@ pub fn compute_taproot_spend_info<T: CovenantProgram>() -> TaprootSpendInfo {
 }
 
 /// Compute the script pub key.
-pub fn get_script_pub_key<T: CovenantProgram>() -> ScriptBuf {
+pub fn get_script_pub_key<T: CovenantProgram>(is_check: bool) -> ScriptBuf {
     let secp = bitcoin::secp256k1::Secp256k1::new();
     let internal_key = UntweakedPublicKey::from(
         bitcoin::secp256k1::PublicKey::from_str(
@@ -172,7 +176,7 @@ pub fn get_script_pub_key<T: CovenantProgram>() -> ScriptBuf {
         .unwrap();
     let taproot_spend_info = map
         .entry(T::CACHE_NAME)
-        .or_insert_with(compute_taproot_spend_info::<T>);
+        .or_insert_with(compute_taproot_spend_info::<T>(is_check));
 
     let witness_program =
         WitnessProgram::p2tr(&secp, internal_key, taproot_spend_info.merkle_root());
@@ -181,8 +185,11 @@ pub fn get_script_pub_key<T: CovenantProgram>() -> ScriptBuf {
 }
 
 /// Compute the control block and script.
-pub fn get_control_block_and_script<T: CovenantProgram>(id: usize) -> (Vec<u8>, Script) {
-    let mut map = TAPROOT_SPEND_INFOS
+pub fn get_control_block_and_script<T: CovenantProgram>(
+    id: usize,
+    is_check: bool,
+) -> (Vec<u8>, Script) {
+    let mut map: std::sync::MutexGuard<BTreeMap<&str, TaprootSpendInfo>> = TAPROOT_SPEND_INFOS
         .get_or_init(|| Mutex::new(BTreeMap::new()))
         .lock()
         .unwrap();
@@ -204,7 +211,11 @@ pub fn get_control_block_and_script<T: CovenantProgram>(id: usize) -> (Vec<u8>, 
     let common_prefix = T::get_common_prefix();
 
     let script = script! {
+        if is_check {
         covenant
+        } else {
+            covenant_nocheck
+        }
         { common_prefix.clone() }
         { script.clone() }
     };
@@ -226,9 +237,10 @@ pub fn get_tx<T: CovenantProgram>(
     old_state: &T::State,
     new_state: &T::State,
     input: &T::Input,
+    is_check: bool,
 ) -> (TxTemplate, u32) {
-    let script_pub_key = get_script_pub_key::<T>();
-    let (control_block_bytes, script) = get_control_block_and_script::<T>(id);
+    let script_pub_key = get_script_pub_key::<T>(is_check);
+    let (control_block_bytes, script) = get_control_block_and_script::<T>(id, is_check);
 
     let tap_leaf_hash = TapLeafHash::from_script(&script, LeafVersion::TapScript);
 
@@ -259,7 +271,8 @@ pub fn get_tx<T: CovenantProgram>(
         script_pubkey: script_pub_key.clone(),
     });
 
-    let old_state_hash = T::get_hash(old_state);
+    let mut old_state_hash = T::get_hash(old_state);
+    old_state_hash = T::get_merged_hash(old_state, old_state_hash);
     let new_state_hash = T::get_hash(new_state);
 
     // Start the search of a working randomizer from 0.
@@ -363,31 +376,34 @@ pub fn get_tx<T: CovenantProgram>(
     // the sha256 without the last byte (31 bytes)
     script_execution_witness.push(e.unwrap()[0..31].to_vec());
 
-    // the first outpoint (32 + 4 = 36 bytes)
-    {
-        let mut bytes = vec![];
-        info.input_outpoint1.consensus_encode(&mut bytes).unwrap();
-
-        script_execution_witness.push(bytes);
-    }
-
-    // the second outpoint (0 or 36 bytes)
-    {
-        if info.input_outpoint2.is_some() {
+    // reconstruct prev txid, and check its consistency
+    if is_check {
+        // the first outpoint (32 + 4 = 36 bytes)
+        {
             let mut bytes = vec![];
-            info.input_outpoint2
-                .unwrap()
-                .consensus_encode(&mut bytes)
-                .unwrap();
+            info.input_outpoint1.consensus_encode(&mut bytes).unwrap();
 
             script_execution_witness.push(bytes);
-        } else {
-            script_execution_witness.push(vec![]);
         }
-    }
 
-    // previous randomizer
-    script_execution_witness.push(info.old_randomizer.to_le_bytes().to_vec());
+        // the second outpoint (0 or 36 bytes)
+        {
+            if info.input_outpoint2.is_some() {
+                let mut bytes = vec![];
+                info.input_outpoint2
+                    .unwrap()
+                    .consensus_encode(&mut bytes)
+                    .unwrap();
+
+                script_execution_witness.push(bytes);
+            } else {
+                script_execution_witness.push(vec![]);
+            }
+        }
+
+        // previous randomizer
+        script_execution_witness.push(info.old_randomizer.to_le_bytes().to_vec());
+    }
 
     // application-specific witnesses
     let old_state_in_script: Script = old_state.clone().into();

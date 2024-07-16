@@ -441,3 +441,26 @@ pub fn covenant() -> Script {
         // [old_state_hash, new_state_hash]
     }
 }
+
+pub fn covenant_nocheck() -> Script {
+    script! {
+        step1
+        // [..., preimage_head ]
+
+        step2
+        // [..., preimage_head, pubkey, first_output | dust ]
+
+        step3
+        // [..., pubkey, old_state_hash, preimage_head | Hash(first_output | second_output) ]
+
+        step4
+        // [..., pubkey, old_state_hash, old_amount, old_txid, preimage_head | Hash(first_output | second_output) | this_input ]
+
+        step5
+        // [..., pubkey, old_state_hash, old_amount, old_txid, preimage_head | Hash(first_output | second_output) | this_input | ext ]
+
+        step6
+        // checksigverify done
+        // [..., pubkey, old_state_hash, old_amount, old_txid ]
+    }
+}
