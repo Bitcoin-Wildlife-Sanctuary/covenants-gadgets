@@ -19,7 +19,7 @@ pub mod wizards;
 pub mod utils;
 
 /// Test module
-pub mod test;
+// pub mod test;
 
 /// The treepp implementation.
 pub(crate) mod treepp {
