@@ -266,8 +266,8 @@ pub fn get_tx<T: CovenantProgram>(
         script_pubkey: script_pub_key.clone(),
     });
 
-    let mut old_state_hash = T::get_hash(old_state);
-    old_state_hash = T::get_merged_hash(old_state, old_state_hash);
+    let old_state_hash = T::get_hash(old_state);
+    let merged_state_hash = T::get_merged_hash(old_state, old_state_hash);
     let new_state_hash = T::get_hash(new_state);
 
     // Start the search of a working randomizer from 0.
@@ -279,6 +279,9 @@ pub fn get_tx<T: CovenantProgram>(
     let e;
     loop {
         let mut script_bytes = vec![OP_RETURN.to_u8(), OP_PUSHBYTES_36.to_u8()];
+        if !is_check {
+            script_bytes.extend_from_slice(&merged_state_hash);
+        }
         script_bytes.extend_from_slice(&new_state_hash);
         script_bytes.extend_from_slice(&randomizer.to_le_bytes());
 
