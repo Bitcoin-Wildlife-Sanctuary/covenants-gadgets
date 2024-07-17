@@ -1,5 +1,6 @@
+use crate::covenant_program::{get_script_pub_key, get_tx, CovenantInput, CovenantProgram};
 use crate::treepp::*;
-use crate::{get_script_pub_key, get_tx, CovenantInput, CovenantProgram, DUST_AMOUNT};
+use crate::DUST_AMOUNT;
 use bitcoin::absolute::LockTime;
 use bitcoin::hashes::Hash;
 use bitcoin::opcodes::all::{OP_PUSHBYTES_36, OP_RETURN};
@@ -44,7 +45,7 @@ pub fn simulation_test<T: CovenantProgram>(
 
     let init_state = T::new();
     let init_state_hash = T::get_hash(&init_state);
-    let script_pub_key = get_script_pub_key::<T>(is_check);
+    let script_pub_key = get_script_pub_key::<T>();
 
     let init_randomizer = 12u32;
 
@@ -178,8 +179,7 @@ pub fn simulation_test<T: CovenantProgram>(
 
         let new_state = T::run(id, &old_state, &input).unwrap();
 
-        let (tx_template, randomizer) =
-            get_tx::<T>(&info, id, &old_state, &new_state, &input, is_check);
+        let (tx_template, randomizer) = get_tx::<T>(&info, id, &old_state, &new_state, &input);
 
         // Check if the new transaction conforms to the requirement.
         // If so, insert this transaction unconditionally.
