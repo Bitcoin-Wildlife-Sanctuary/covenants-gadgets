@@ -87,7 +87,7 @@ pub fn step2() -> Script {
 /// - new_state_hash
 /// - old_state_hash
 ///
-pub fn step3() -> Script {
+pub fn step3(is_check: bool) -> Script {
     script! {
         // script hash header
         OP_PUSHBYTES_2 OP_RETURN OP_PUSHBYTES_36
@@ -103,22 +103,42 @@ pub fn step3() -> Script {
         OP_SIZE 32 OP_EQUALVERIFY
         // save the old state hash in the altstack for later use
         OP_DUP OP_TOALTSTACK
-        OP_TOALTSTACK
 
-        // get a hint: the randomizer for this transaction (4 bytes)
-        OP_HINT
-        OP_SIZE 4 OP_EQUALVERIFY
-        OP_CAT3
+        if is_check {
+            OP_TOALTSTACK
 
-        OP_SHA256
+            // get a hint: the randomizer for this transaction (4 bytes)
+            OP_HINT
+            OP_SIZE 4 OP_EQUALVERIFY
+            OP_CAT3
 
-        OP_PUSHBYTES_3 OP_PUSHBYTES_34 OP_PUSHBYTES_0 OP_PUSHBYTES_32
-        OP_SWAP OP_CAT3
+            OP_SHA256
 
-        OP_SHA256
-        OP_ROT OP_SWAP OP_CAT2
+            OP_PUSHBYTES_3 OP_PUSHBYTES_34 OP_PUSHBYTES_0 OP_PUSHBYTES_32
+            OP_SWAP OP_CAT3
 
-        OP_FROMALTSTACK OP_SWAP
+            OP_SHA256
+            OP_ROT OP_SWAP OP_CAT2
+
+            OP_FROMALTSTACK OP_SWAP
+        } else {
+            OP_DUP OP_TOALTSTACK OP_SWAP
+
+            // get a hint: the randomizer for this transaction (4 bytes)
+            OP_HINT
+            OP_SIZE 4 OP_EQUALVERIFY
+            OP_CAT4
+
+            OP_SHA256
+
+            OP_PUSHBYTES_3 OP_PUSHBYTES_34 OP_PUSHBYTES_0 OP_PUSHBYTES_32
+            OP_SWAP OP_CAT3
+
+            OP_SHA256
+            OP_ROT OP_SWAP OP_CAT2
+
+            OP_FROMALTSTACK OP_SWAP
+        }
     }
 }
 
@@ -418,7 +438,7 @@ pub fn covenant(is_check: bool) -> Script {
         step2
         // [..., preimage_head, pubkey, first_output | dust ]
 
-        step3
+        { step3(is_check) }
         // [..., pubkey, old_state_hash, preimage_head | Hash(first_output | second_output) ]
 
         step4
