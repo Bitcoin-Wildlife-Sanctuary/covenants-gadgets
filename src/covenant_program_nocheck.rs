@@ -174,7 +174,7 @@ pub fn get_tx_nocheck<T: CovenantProgram>(
     // and the signature preimage is calculated by serializing the transaction in a specific way.
     let e;
     loop {
-        let mut script_bytes = vec![OP_RETURN.to_u8(), OP_PUSHBYTES_68.to_u8()];
+        let mut script_bytes = vec![OP_RETURN.to_u8(), OP_PUSHBYTES_36.to_u8()];
         script_bytes.extend_from_slice(&old_state_hash);
         script_bytes.extend_from_slice(&new_state_hash);
         script_bytes.extend_from_slice(&randomizer.to_le_bytes());
