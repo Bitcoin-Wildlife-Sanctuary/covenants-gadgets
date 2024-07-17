@@ -170,7 +170,7 @@ pub fn get_script_pub_key<T: CovenantProgram>(is_check: bool) -> ScriptBuf {
     );
 
     let mut map = TAPROOT_SPEND_INFOS
-        .get_or_init(|_| Mutex::new(BTreeMap::new()))
+        .get_or_init(|| Mutex::new(BTreeMap::new()))
         .lock()
         .unwrap();
     let taproot_spend_info = map
@@ -189,7 +189,7 @@ pub fn get_control_block_and_script<T: CovenantProgram>(
     is_check: bool,
 ) -> (Vec<u8>, Script) {
     let mut map: std::sync::MutexGuard<BTreeMap<&str, TaprootSpendInfo>> = TAPROOT_SPEND_INFOS
-        .get_or_init(|_| Mutex::new(BTreeMap::new()))
+        .get_or_init(|| Mutex::new(BTreeMap::new()))
         .lock()
         .unwrap();
     let taproot_spend_info = map
