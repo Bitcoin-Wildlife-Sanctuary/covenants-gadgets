@@ -194,7 +194,7 @@ pub fn get_control_block_and_script<T: CovenantProgram>(
         .unwrap();
     let taproot_spend_info = map
         .entry(T::CACHE_NAME)
-        .or_insert_with(compute_taproot_spend_info::<T>);
+        .or_insert_with(compute_taproot_spend_info::<T>(is_check));
 
     let mut map2 = SCRIPT_MAPS
         .get_or_init(|| Mutex::new(BTreeMap::new()))

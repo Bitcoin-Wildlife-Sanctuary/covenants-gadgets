@@ -441,7 +441,7 @@ pub fn covenant(is_check: bool) -> Script {
             step9
             // [old_state_hash, new_state_hash]
         } else {
-            // clear with brute force
+            // clear the inputs for cheching prev txid with brute force
             OP_DROP OP_DROP OP_DROP OP_DROP
             OP_FROMALTSTACK OP_FROMALTSTACK
             // [old_state_hash, new_state_hash]
