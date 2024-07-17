@@ -410,7 +410,7 @@ pub fn step9() -> Script {
 }
 
 /// Implementation of a standard covenant.
-pub fn covenant() -> Script {
+pub fn covenant(is_check: bool) -> Script {
     script! {
         step1
         // [..., preimage_head ]
@@ -431,36 +431,20 @@ pub fn covenant() -> Script {
         // checksigverify done
         // [..., pubkey, old_state_hash, old_amount, old_txid ]
 
-        step7
-        // [..., pubkey, old_state_hash, old_amount, old_txid, version | inputs ]
+        if is_check {
+            step7
+            // [..., pubkey, old_state_hash, old_amount, old_txid, version | inputs ]
 
-        step8
-        // [..., pubkey, old_state_hash, old_amount, old_txid, version | inputs | output | locktime ]
+            step8
+            // [..., pubkey, old_state_hash, old_amount, old_txid, version | inputs | output | locktime ]
 
-        step9
-        // [old_state_hash, new_state_hash]
-    }
-}
-
-pub fn covenant_nocheck() -> Script {
-    script! {
-        step1
-        // [..., preimage_head ]
-
-        step2
-        // [..., preimage_head, pubkey, first_output | dust ]
-
-        step3
-        // [..., pubkey, old_state_hash, preimage_head | Hash(first_output | second_output) ]
-
-        step4
-        // [..., pubkey, old_state_hash, old_amount, old_txid, preimage_head | Hash(first_output | second_output) | this_input ]
-
-        step5
-        // [..., pubkey, old_state_hash, old_amount, old_txid, preimage_head | Hash(first_output | second_output) | this_input | ext ]
-
-        step6
-        // checksigverify done
-        // [..., pubkey, old_state_hash, old_amount, old_txid ]
+            step9
+            // [old_state_hash, new_state_hash]
+        } else {
+            // clear with brute force
+            OP_DROP OP_DROP OP_DROP OP_DROP
+            OP_FROMALTSTACK OP_FROMALTSTACK
+            // [old_state_hash, new_state_hash]
+        }
     }
 }

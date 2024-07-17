@@ -147,11 +147,7 @@ pub fn compute_taproot_spend_info<T: CovenantProgram>(is_check: bool) -> Taproot
         (
             1,
             script! {
-                if is_check {
-                    covenant
-                } else {
-                    covenant_nocheck
-                }
+                { covenant(is_check) }
                 { common_prefix.clone() }
                 { script.clone() }
             },
@@ -214,11 +210,7 @@ pub fn get_control_block_and_script<T: CovenantProgram>(
     let common_prefix = T::get_common_prefix();
 
     let script = script! {
-        if is_check {
-        covenant
-        } else {
-            covenant_nocheck
-        }
+        { covenant(is_check) }
         { common_prefix.clone() }
         { script.clone() }
     };
