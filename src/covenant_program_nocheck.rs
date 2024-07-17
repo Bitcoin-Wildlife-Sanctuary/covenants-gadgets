@@ -11,7 +11,7 @@ use crate::structures::tagged_hash::get_hashed_tag;
 use crate::{DUST_AMOUNT, SCRIPT_MAPS, SECP256K1_GENERATOR, TAPROOT_SPEND_INFOS};
 use bitcoin::absolute::LockTime;
 use bitcoin::key::UntweakedPublicKey;
-use bitcoin::opcodes::all::{OP_PUSHBYTES_36, OP_RETURN};
+use bitcoin::opcodes::all::{OP_PUSHBYTES_36, OP_PUSHBYTES_68, OP_RETURN};
 use bitcoin::sighash::{Prevouts, SighashCache};
 use bitcoin::taproot::{LeafVersion, TaprootBuilder, TaprootSpendInfo};
 use bitcoin::transaction::Version;
@@ -174,7 +174,7 @@ pub fn get_tx_nocheck<T: CovenantProgram>(
     // and the signature preimage is calculated by serializing the transaction in a specific way.
     let e;
     loop {
-        let mut script_bytes = vec![OP_RETURN.to_u8(), OP_PUSHBYTES_36.to_u8()];
+        let mut script_bytes = vec![OP_RETURN.to_u8(), OP_PUSHBYTES_68.to_u8()];
         script_bytes.extend_from_slice(&old_state_hash);
         script_bytes.extend_from_slice(&new_state_hash);
         script_bytes.extend_from_slice(&randomizer.to_le_bytes());
