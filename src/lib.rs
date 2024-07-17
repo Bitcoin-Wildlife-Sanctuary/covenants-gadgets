@@ -18,11 +18,8 @@ pub mod wizards;
 /// Modules for some utility functions.
 pub mod utils;
 
-/// The covenant script implementation.
-pub mod bitcoin_script;
-
 /// Test module
-// pub mod test;
+pub mod test;
 
 /// The treepp implementation.
 pub(crate) mod treepp {

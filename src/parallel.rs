@@ -5,7 +5,6 @@
 
 use crate::{treepp::*, SimulationInstruction};
 
-use crate::bitcoin_script::covenant;
 use crate::structures::tagged_hash::get_hashed_tag;
 use crate::CovenantProgram;
 use crate::{DUST_AMOUNT, SCRIPT_MAPS, SECP256K1_GENERATOR, TAPROOT_SPEND_INFOS};
@@ -32,6 +31,281 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::Mutex;
 
+use crate::structures::tagged_hash::{HashTag, TaggedHashGadget};
+use crate::utils::pseudo::{OP_CAT2, OP_CAT3, OP_CAT4, OP_HINT};
+use crate::wizards::{tap_csv_preimage, tx};
+
+/// Step 1: Create the beginning part of the preimage.
+///
+/// Output:
+/// - preimage_head
+///
+pub fn step1() -> Script {
+    script! {
+        // For more information about the construction of the Tap CheckSigVerify Preimage, please
+        // check out the `covenants-gadgets` repository.
+
+        { tap_csv_preimage::Step1EpochGadget::default() }
+        { tap_csv_preimage::Step2HashTypeGadget::from_constant(&TapSighashType::AllPlusAnyoneCanPay) }
+        { tap_csv_preimage::Step3VersionGadget::from_constant(&Version::TWO) }
+        { tap_csv_preimage::Step4LockTimeGadget::from_constant_absolute(&LockTime::ZERO) }
+        OP_CAT4
+    }
+}
+
+/// Step 2: Assemble the first output, which is the program itself, with the new balance.
+///
+/// Hint:
+/// - new balance
+/// - script pubkey
+///
+/// Input:
+/// - preimage_head
+///
+/// Output:
+/// - preimage_head
+/// - pubkey
+/// - first_output
+/// - dust for second_output
+///
+pub fn step2() -> Script {
+    script! {
+        // get a hint: new balance (8 bytes)
+        OP_HINT
+        OP_SIZE 8 OP_EQUALVERIFY
+
+        // get a hint: this script's scriptpubkey (34 bytes)
+        OP_HINT
+        OP_SIZE 34 OP_EQUALVERIFY
+
+        // save pubkey to the altstack
+        OP_DUP OP_TOALTSTACK
+
+        OP_PUSHBYTES_1 OP_PUSHBYTES_34
+        OP_SWAP OP_CAT3
+
+        OP_FROMALTSTACK OP_SWAP
+
+        // CAT dust amount
+        OP_PUSHBYTES_8 OP_PUSHBYTES_74 OP_PUSHBYTES_1 OP_PUSHBYTES_0 OP_PUSHBYTES_0
+        OP_PUSHBYTES_0 OP_PUSHBYTES_0 OP_PUSHBYTES_0 OP_PUSHBYTES_0
+        OP_CAT
+    }
+}
+
+/// Step 3: deal with the second output via the new and old state hash, computing the new state's script.
+///
+/// Hint:
+/// - new_state_hash
+/// - old_state_hash
+///
+/// Input:
+/// - preimage_head
+/// - pubkey
+/// - first_output
+/// - dust for second_output
+///
+/// Output:
+/// - pubkey
+/// - preimage_head | Hash(first output | second_output)
+///
+/// Altstack:
+/// - new_state_hash
+/// - old_state_hash
+///
+pub fn step3() -> Script {
+    script! {
+        // script hash header
+        OP_PUSHBYTES_2 OP_RETURN OP_PUSHBYTES_68
+
+        // get a hint: the new state hash
+        OP_HINT
+        OP_SIZE 32 OP_EQUALVERIFY
+        // save the new state hash to the altstack
+        OP_DUP OP_TOALTSTACK
+
+        // get a hint: the old state hash
+        OP_HINT
+        OP_SIZE 32 OP_EQUALVERIFY
+        // save the old state hash in the altstack for later use
+        OP_DUP OP_TOALTSTACK
+
+        OP_SWAP
+
+        // get a hint: the randomizer for this transaction (4 bytes)
+        OP_HINT
+        OP_SIZE 4 OP_EQUALVERIFY
+        OP_CAT4
+
+        OP_SHA256
+
+        OP_PUSHBYTES_3 OP_PUSHBYTES_34 OP_PUSHBYTES_0 OP_PUSHBYTES_32
+        OP_SWAP OP_CAT3
+
+        OP_SHA256
+        OP_ROT OP_SWAP OP_CAT2
+
+        OP_DEPTH 8 OP_EQUALVERIFY
+    }
+}
+
+/// Step 4: provide the original data of the input.
+///
+/// Hint:
+/// - old_txid
+/// - old_amount
+///
+/// Input:
+/// - pubkey
+/// - preimage_head | Hash(first output | second_output)
+///
+/// Output:
+/// - preimage_head | Hash(first output | second_output) | this_input
+///
+/// Altstack:
+/// - new_state_hash
+/// - old_state_hash
+///
+pub fn step4() -> Script {
+    script! {
+        { tap_csv_preimage::Step7SpendTypeGadget::from_constant(1, false) } OP_CAT2
+
+        // get a hint: previous tx's txid
+        OP_HINT
+        OP_SIZE 32 OP_EQUALVERIFY
+
+        // save a copy to altstack
+        // OP_DUP OP_TOALTSTACK
+
+        // require the output index be 0
+        { tap_csv_preimage::step8_data_input_part_if_anyonecanpay::step1_outpoint::Step2IndexGadget::from_constant(0) }
+        OP_CAT3
+
+        // get a hint: previous tx's amount
+        OP_HINT
+        OP_SIZE 8 OP_EQUALVERIFY
+        // OP_DUP OP_TOALTSTACK
+        OP_CAT2
+
+        // add the script pub key
+        1 OP_ROLL
+        OP_PUSHBYTES_1 OP_PUSHBYTES_34 OP_SWAP
+        OP_CAT3
+
+        // require the input sequence number be 0xfffffffd
+        { tap_csv_preimage::step8_data_input_part_if_anyonecanpay::Step4SequenceGadget::from_constant(&Sequence::ENABLE_RBF_NO_LOCKTIME) }
+        OP_CAT2
+
+        OP_DEPTH 5 OP_EQUALVERIFY
+    }
+}
+
+/// Step 5: provide the extension data.
+///
+/// Hint:
+/// - tap leaf hash
+///
+/// Input:
+/// - preimage_head | Hash(first output | second_output) | this_input
+///
+/// Output:
+/// - preimage_head | Hash(first output | second_output) | this_input | ext
+///
+/// Altstack:
+/// - new_state_hash
+/// - old_state_hash
+///
+pub fn step5() -> Script {
+    script! {
+        // get a hint: tap leaf hash
+        OP_HINT
+        OP_SIZE 32 OP_EQUALVERIFY
+
+        { tap_csv_preimage::step12_ext::Step2KeyVersionGadget::from_constant(0) }
+        { tap_csv_preimage::step12_ext::Step3CodeSepPosGadget::no_code_sep_executed() }
+        OP_CAT4
+
+        OP_DEPTH 4 OP_EQUALVERIFY
+    }
+}
+
+/// Step 6: verify the reflection using the Schnorr trick.
+///
+/// Hint:
+/// - the SHA256 BIP-340 challenge hash without the last byte (which should be 0x01)
+///
+/// Input:
+/// - preimage_head | Hash(first output | second_output) | this_input | ext
+///
+/// Output:
+///
+/// Altstack:
+/// - new_state_hash
+/// - old_state_hash
+///
+/// The script fails if the preimage doesn't match the transaction.
+///
+pub fn step6() -> Script {
+    // Obtain the secp256k1 dummy generator, which would be point R in the signature, as well as
+    // the public key.
+    let secp256k1_generator = SECP256K1_GENERATOR.clone();
+
+    script! {
+        { TaggedHashGadget::from_provided(&HashTag::TapSighash) }
+
+        { secp256k1_generator.clone() }
+        OP_DUP OP_TOALTSTACK
+        OP_DUP OP_TOALTSTACK
+
+        OP_DUP OP_ROT OP_CAT3
+
+        { TaggedHashGadget::from_provided(&HashTag::BIP340Challenge) }
+
+        // get a hint: the sha256 without the last byte
+        OP_HINT
+        OP_SIZE 31 OP_EQUALVERIFY
+
+        OP_DUP { 1 } OP_CAT
+        OP_ROT OP_EQUALVERIFY
+
+        OP_FROMALTSTACK OP_SWAP
+
+        OP_PUSHBYTES_2 OP_PUSHBYTES_2 OP_RIGHT
+        OP_CAT3
+
+        OP_FROMALTSTACK
+        OP_CHECKSIGVERIFY
+
+        OP_DEPTH 2 OP_EQUALVERIFY
+    }
+}
+
+/// Implementation of a standard covenant.
+pub fn covenant() -> Script {
+    script! {
+        step1
+        // [..., preimage_head ]
+
+        step2
+        // // [..., preimage_head, pubkey, first_output | dust ]
+
+        step3
+        // [..., pubkey, old_state_hash, preimage_head | Hash(first_output | second_output) ]
+
+        step4
+        // // [..., pubkey, old_state_hash, old_amount, old_txid, preimage_head | Hash(first_output | second_output) | this_input ]
+
+        step5
+        // // [..., pubkey, old_state_hash, old_amount, old_txid, preimage_head | Hash(first_output | second_output) | this_input | ext ]
+
+        step6
+        // checksigverify done
+        // [..., pubkey, old_state_hash, old_amount, old_txid ]
+
+        OP_FROMALTSTACK OP_FROMALTSTACK
+    }
+}
+
 /// Information necessary to create the new transaction
 pub struct CovenantInput {
     /// The randomizer used in the previous caboose (for the Schnorr trick to work).
@@ -40,12 +314,6 @@ pub struct CovenantInput {
     pub old_balance: u64,
     /// The txid of the old state.
     pub old_txid: Txid,
-
-    /// The first input's outpoint of the transaction with txid.
-    pub input_outpoint1: OutPoint,
-    /// The second input's outpoint of the transaction with txid.
-    /// Note: the second input is optional.
-    pub input_outpoint2: Option<OutPoint>,
 
     /// The second input in the new transaction, used to deposit more money into the program.
     /// Note: The witness must be provided for this input.
@@ -78,7 +346,7 @@ pub fn compute_taproot_spend_info<T: CovenantProgram>() -> TaprootSpendInfo {
         (
             1,
             script! {
-                { covenant(false) }
+                covenant
                 { common_prefix.clone() }
                 { script.clone() }
             },
@@ -138,7 +406,7 @@ pub fn get_control_block_and_script<T: CovenantProgram>(id: usize) -> (Vec<u8>, 
     let common_prefix = T::get_common_prefix();
 
     let script = script! {
-        { covenant(false) }
+        covenant
         { common_prefix.clone() }
         { script.clone() }
     };
@@ -416,9 +684,6 @@ pub fn simulation_test<T: CovenantProgram>(
     let mut old_balance = 1_000_000_000u64;
     let mut old_txid = init_tx.compute_txid();
 
-    let mut old_tx_outpoint1 = init_tx.input[0].previous_output;
-    let mut old_tx_outpoint2 = None;
-
     #[cfg(feature = "debug")]
     eprintln!("{:?}", old_state);
 
@@ -485,8 +750,6 @@ pub fn simulation_test<T: CovenantProgram>(
             old_randomizer,
             old_balance,
             old_txid: old_txid.clone(),
-            input_outpoint1: old_tx_outpoint1.clone(),
-            input_outpoint2: old_tx_outpoint2.clone(),
             optional_deposit_input: deposit_input,
             new_balance,
         };
@@ -510,12 +773,5 @@ pub fn simulation_test<T: CovenantProgram>(
 
         #[cfg(feature = "debug")]
         eprintln!("{:?}", old_state);
-
-        old_tx_outpoint1 = tx_template.tx.input[0].previous_output;
-        old_tx_outpoint2 = tx_template
-            .tx
-            .input
-            .get(1)
-            .and_then(|x| Some(x.previous_output.clone()));
     }
 }
