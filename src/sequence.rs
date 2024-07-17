@@ -3,14 +3,15 @@
 
 #![deny(missing_docs)]
 
-use crate::treepp::*;
+use crate::{treepp::*, SimulationInstruction};
 
 use crate::bitcoin_script::covenant;
 use crate::structures::tagged_hash::get_hashed_tag;
+use crate::CovenantProgram;
 use crate::{DUST_AMOUNT, SCRIPT_MAPS, SECP256K1_GENERATOR, TAPROOT_SPEND_INFOS};
-use anyhow::Result;
 use bitcoin::absolute::LockTime;
 use bitcoin::consensus::Encodable;
+use bitcoin::hashes::Hash;
 use bitcoin::key::UntweakedPublicKey;
 use bitcoin::opcodes::all::{OP_PUSHBYTES_36, OP_RETURN};
 use bitcoin::sighash::{Prevouts, SighashCache};
@@ -18,44 +19,19 @@ use bitcoin::taproot::{LeafVersion, TaprootBuilder, TaprootSpendInfo};
 use bitcoin::transaction::Version;
 use bitcoin::{
     Amount, OutPoint, ScriptBuf, Sequence, TapLeafHash, TapSighashType, Transaction, TxIn, TxOut,
-    Txid, Witness, WitnessProgram,
+    Txid, WScriptHash, Witness, WitnessProgram,
 };
 use bitcoin_scriptexec::{convert_to_witness, TxTemplate};
+use bitcoin_simulator::database::Database;
+use bitcoin_simulator::policy::Policy;
+use rand::{Rng, RngCore, SeedableRng};
+use rand_chacha::ChaCha20Rng;
 use sha2::Digest;
+use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::fmt::Debug;
+use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::Mutex;
-
-/// Trait for a covenant program.
-pub trait CovenantProgram {
-    /// Type of the state for this covenant program.
-    type State: Into<Script> + Debug + Clone;
-
-    /// Type of input (could be an enum).
-    type Input: Into<Script> + Clone;
-
-    /// Unique name for caching.
-    const CACHE_NAME: &'static str;
-
-    /// Create an empty state.
-    fn new() -> Self::State;
-
-    /// Compute the state hash, which is application-specific.
-    fn get_hash(state: &Self::State) -> Vec<u8>;
-
-    /// Compute the merged state hash, say hash(old state hash + new state)
-    fn get_merged_hash(state: &Self::State, hash_bytes: Vec<u8>) -> Vec<u8>;
-
-    /// Get all the scripts of this application.
-    fn get_all_scripts() -> BTreeMap<usize, Script>;
-
-    /// Get the common prefix script.
-    fn get_common_prefix() -> Script;
-
-    /// Run the program to move from the previous state to the new state.
-    fn run(id: usize, old_state: &Self::State, input: &Self::Input) -> Result<Self::State>;
-}
 
 /// Information necessary to create the new transaction.
 pub struct CovenantInput {
@@ -388,4 +364,183 @@ pub fn get_tx<T: CovenantProgram>(
     };
 
     (tx_template, randomizer)
+}
+
+/// Run simulation test sequentially.
+pub fn simulation_test<T: CovenantProgram>(
+    repeat: usize,
+    test_generator: &mut impl FnMut(&T::State) -> Option<SimulationInstruction<T>>,
+) {
+    let policy = Policy::default().set_fee(7).set_max_tx_weight(400000);
+
+    let prng = Rc::new(RefCell::new(ChaCha20Rng::seed_from_u64(0)));
+    let get_rand_txid = || {
+        let mut bytes = [0u8; 20];
+        prng.borrow_mut().fill_bytes(&mut bytes);
+        Txid::hash(&bytes)
+    };
+
+    let db = Database::connect_temporary_database().unwrap();
+
+    let init_state = T::new();
+    let init_state_hash = T::get_hash(&init_state);
+    let script_pub_key = get_script_pub_key::<T>();
+
+    let init_randomizer = 12u32;
+
+    let mut script_bytes = vec![OP_RETURN.to_u8(), OP_PUSHBYTES_36.to_u8()];
+    script_bytes.extend_from_slice(&init_state_hash);
+    script_bytes.extend_from_slice(&init_randomizer.to_le_bytes());
+
+    let prev_witness_program = WitnessProgram::p2wsh(&ScriptBuf::from_bytes(script_bytes));
+
+    // initialize the counter and accept it unconditionally
+    let init_tx = Transaction {
+        version: Version::TWO,
+        lock_time: LockTime::ZERO,
+        input: vec![TxIn {
+            previous_output: OutPoint {
+                txid: get_rand_txid(),
+                vout: 0,
+            },
+            script_sig: ScriptBuf::default(),
+            sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
+            witness: Witness::new(),
+        }],
+        output: vec![
+            TxOut {
+                value: Amount::from_sat(1_000_000_000),
+                script_pubkey: script_pub_key.clone(),
+            },
+            TxOut {
+                value: Amount::from_sat(DUST_AMOUNT),
+                script_pubkey: ScriptBuf::new_witness_program(&prev_witness_program),
+            },
+        ],
+    };
+
+    // Ignore whether the TxIn is valid, make the outputs available in the network.
+    db.insert_transaction_unconditionally(&init_tx).unwrap();
+
+    // Prepare the trivial script, which is used for testing purposes to deposit more money
+    // into the program.
+    let trivial_p2wsh_script = script! {
+        OP_TRUE
+    };
+
+    let trivial_p2wsh_script_pubkey =
+        ScriptBuf::new_p2wsh(&WScriptHash::hash(trivial_p2wsh_script.as_bytes()));
+
+    let mut trivial_p2wsh_witness = Witness::new();
+    trivial_p2wsh_witness.push([]);
+    trivial_p2wsh_witness.push(trivial_p2wsh_script);
+
+    // Initialize the state.
+    let mut old_state = init_state;
+    let mut old_randomizer = init_randomizer;
+    let mut old_balance = 1_000_000_000u64;
+    let mut old_txid = init_tx.compute_txid();
+
+    let mut old_tx_outpoint1 = init_tx.input[0].previous_output;
+    let mut old_tx_outpoint2 = None;
+
+    #[cfg(feature = "debug")]
+    eprintln!("{:?}", old_state);
+
+    for _ in 0..repeat {
+        let mut has_deposit_input = prng.borrow_mut().gen::<bool>();
+
+        if old_balance < 700_000u64 {
+            has_deposit_input = true;
+        }
+
+        // If there is a deposit input
+        let deposit_input = if has_deposit_input {
+            let fee_tx = Transaction {
+                version: Version::TWO,
+                lock_time: LockTime::ZERO,
+                input: vec![TxIn {
+                    previous_output: OutPoint {
+                        txid: get_rand_txid(),
+                        vout: 0xffffffffu32,
+                    },
+                    script_sig: ScriptBuf::new(),
+                    sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
+                    witness: Witness::new(),
+                }], // a random input is needed to avoid TXID collision.
+                output: vec![TxOut {
+                    value: Amount::from_sat(123_456_000),
+                    script_pubkey: trivial_p2wsh_script_pubkey.clone(),
+                }],
+            };
+
+            db.insert_transaction_unconditionally(&fee_tx).unwrap();
+
+            Some(TxIn {
+                previous_output: OutPoint {
+                    txid: fee_tx.compute_txid(),
+                    vout: 0,
+                },
+                script_sig: ScriptBuf::new(),
+                sequence: Sequence::ENABLE_RBF_NO_LOCKTIME,
+                witness: trivial_p2wsh_witness.clone(),
+            })
+        } else {
+            None
+        };
+
+        let next_step = test_generator(&old_state);
+        if next_step.is_none() {
+            return;
+        }
+        let SimulationInstruction::<T> {
+            program_index: id,
+            program_input: input,
+            fee,
+        } = next_step.unwrap();
+
+        let mut new_balance = old_balance;
+        if deposit_input.is_some() {
+            new_balance += 123_456_000;
+        }
+        new_balance -= fee as u64; // as for transaction fee
+        new_balance -= DUST_AMOUNT;
+
+        let info = CovenantInput {
+            old_randomizer,
+            old_balance,
+            old_txid: old_txid.clone(),
+            input_outpoint1: old_tx_outpoint1.clone(),
+            input_outpoint2: old_tx_outpoint2.clone(),
+            optional_deposit_input: deposit_input,
+            new_balance,
+        };
+
+        let new_state = T::run(id, &old_state, &input).unwrap();
+
+        let (tx_template, randomizer) = get_tx::<T>(&info, id, &old_state, &new_state, &input);
+
+        // Check if the new transaction conforms to the requirement.
+        // If so, insert this transaction unconditionally.
+        db.verify_transaction(&tx_template.tx).unwrap();
+        db.check_fees(&tx_template.tx, &policy).unwrap();
+        db.insert_transaction_unconditionally(&tx_template.tx)
+            .unwrap();
+
+        // Update the local state.
+        old_state = new_state;
+        old_randomizer = randomizer;
+        old_balance = new_balance;
+        old_txid = tx_template.tx.compute_txid();
+
+        #[cfg(feature = "debug")]
+        eprintln!("{:?}", old_state);
+
+        old_tx_outpoint1 = tx_template.tx.input[0].previous_output;
+        old_tx_outpoint2 = tx_template
+            .tx
+            .input
+            .get(1)
+            .and_then(|x| Some(x.previous_output.clone()));
+    }
 }

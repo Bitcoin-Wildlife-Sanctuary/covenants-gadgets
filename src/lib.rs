@@ -1,5 +1,10 @@
-pub mod covenant_program;
-pub mod covenant_program_nocheck;
+//! The covenant gadget crate implements a number of Bitcoin script gadgets that
+//! make it easy for developers to build applications from Bitcoin script.
+
+#![deny(missing_docs)]
+
+pub mod parallel;
+pub mod sequence;
 
 /// Modules for some internal structures such as C++-like integers and Bitcoin VI.
 pub mod internal_structures;
@@ -17,7 +22,7 @@ pub mod utils;
 pub mod bitcoin_script;
 
 /// Test module
-pub mod test;
+// pub mod test;
 
 /// The treepp implementation.
 pub(crate) mod treepp {
@@ -35,6 +40,9 @@ use once_cell::sync::Lazy;
 use std::collections::BTreeMap;
 use std::sync::{Mutex, OnceLock};
 
+use anyhow::Result;
+use std::fmt::Debug;
+
 /// The "Nothing Up My Sleeve" (NUMS) point.
 pub static SECP256K1_GENERATOR: Lazy<Vec<u8>> = Lazy::new(|| {
     hex::decode("79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798").unwrap()
@@ -50,3 +58,40 @@ pub static SCRIPT_MAPS: OnceLock<Mutex<BTreeMap<&'static str, BTreeMap<usize, tr
 /// The taproot spend info.
 pub static TAPROOT_SPEND_INFOS: OnceLock<Mutex<BTreeMap<&'static str, TaprootSpendInfo>>> =
     OnceLock::new();
+
+/// Trait for a covenant program.
+pub trait CovenantProgram {
+    /// Type of the state for this covenant program.
+    type State: Into<treepp::Script> + Debug + Clone;
+
+    /// Type of input (could be an enum).
+    type Input: Into<treepp::Script> + Clone;
+
+    /// Unique name for caching.
+    const CACHE_NAME: &'static str;
+
+    /// Create an empty state.
+    fn new() -> Self::State;
+
+    /// Compute the state hash, which is application-specific.
+    fn get_hash(state: &Self::State) -> Vec<u8>;
+
+    /// Get all the scripts of this application.
+    fn get_all_scripts() -> BTreeMap<usize, treepp::Script>;
+
+    /// Get the common prefix script.
+    fn get_common_prefix() -> treepp::Script;
+
+    /// Run the program to move from the previous state to the new state.
+    fn run(id: usize, old_state: &Self::State, input: &Self::Input) -> Result<Self::State>;
+}
+
+/// The instruction to simulate the next step.
+pub struct SimulationInstruction<T: CovenantProgram> {
+    /// The index of the program to be executed.
+    pub program_index: usize,
+    /// The fee to reserve for the transaction fee.
+    pub fee: usize,
+    /// The program input.
+    pub program_input: T::Input,
+}

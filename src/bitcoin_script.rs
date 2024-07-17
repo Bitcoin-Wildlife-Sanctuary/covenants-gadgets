@@ -468,3 +468,21 @@ pub fn covenant(is_check: bool) -> Script {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_op_pushbytes32() {
+        let script = script! {
+            OP_PUSHBYTES_2
+            OP_RETURN
+            OP_PUSHBYTES_36
+            { 324324 }
+            // OP_PUSHBYTES_3 OP_PUSHBYTES_34 OP_PUSHBYTES_0 OP_PUSHBYTES_32
+        };
+        let exec_result = execute_script(script);
+        println!("stack elements: {}", exec_result.final_stack.to_string());
+    }
+}
