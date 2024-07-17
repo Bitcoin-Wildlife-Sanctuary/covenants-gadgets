@@ -11,7 +11,7 @@ use crate::{DUST_AMOUNT, SCRIPT_MAPS, SECP256K1_GENERATOR, TAPROOT_SPEND_INFOS};
 use bitcoin::absolute::LockTime;
 use bitcoin::hashes::Hash;
 use bitcoin::key::UntweakedPublicKey;
-use bitcoin::opcodes::all::{OP_PUSHBYTES_36, OP_PUSHBYTES_68, OP_RETURN};
+use bitcoin::opcodes::all::{OP_PUSHBYTES_68, OP_RETURN};
 use bitcoin::sighash::{Prevouts, SighashCache};
 use bitcoin::taproot::{LeafVersion, TaprootBuilder, TaprootSpendInfo};
 use bitcoin::transaction::Version;
@@ -33,7 +33,7 @@ use std::sync::Mutex;
 
 use crate::structures::tagged_hash::{HashTag, TaggedHashGadget};
 use crate::utils::pseudo::{OP_CAT2, OP_CAT3, OP_CAT4, OP_HINT};
-use crate::wizards::{tap_csv_preimage, tx};
+use crate::wizards::tap_csv_preimage;
 
 /// Step 1: Create the beginning part of the preimage.
 ///
