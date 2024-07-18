@@ -3,8 +3,8 @@
 
 #![deny(missing_docs)]
 
-pub mod parallel;
-pub mod sequence;
+/// Modules for covenants, including sequential mode and parallel mode
+pub mod covenants;
 
 /// Modules for some internal structures such as C++-like integers and Bitcoin VI.
 pub mod internal_structures;
@@ -17,9 +17,6 @@ pub mod wizards;
 
 /// Modules for some utility functions.
 pub mod utils;
-
-/// Test module
-// pub mod test;
 
 /// The treepp implementation.
 pub(crate) mod treepp {
