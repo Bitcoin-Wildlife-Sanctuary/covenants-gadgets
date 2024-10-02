@@ -15,6 +15,10 @@ hex = "0.4.3"
 bitcoin-scriptexec = { git = "https://github.com/Bitcoin-Wildlife-Sanctuary/rust-bitcoin-scriptexec", tag = "1.0.0", features = ["debug"] }
 bitcoin-simulator = { git = "https://github.com/Bitcoin-Wildlife-Sanctuary/bitcoin-simulator", tag = "1.0.0" }
 
+[[bin]]
+name = "print_address"
+path = "src/bin/print_address.rs"
+
 [profile.dev]
 opt-level = 3
 

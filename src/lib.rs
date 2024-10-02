@@ -60,6 +60,9 @@ pub mod bitcoin_script;
 /// Test module
 pub mod test;
 
+/// The counter example
+pub mod examples;
+
 /// The dust amount for a P2WSH transaction.
 pub const DUST_AMOUNT: u64 = 330;
 
