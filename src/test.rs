@@ -148,7 +148,7 @@ pub fn simulation_test_with_policy<T: CovenantProgram>(
 
         let next_step = test_generator(&old_state);
         if next_step.is_none() {
-            return;
+            return total_fees;
         }
         let SimulationInstruction::<T> {
             program_index: id,
