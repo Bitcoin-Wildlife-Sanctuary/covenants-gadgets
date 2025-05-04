@@ -28,7 +28,8 @@ pub fn simulation_test_with_policy<T: CovenantProgram>(
     repeat: usize,
     test_generator: &mut impl FnMut(&T::State) -> Option<SimulationInstruction<T>>,
     policy: &Policy,
-) {
+) -> u64 {
+    let mut total_fees = 0;
     let prng = Rc::new(RefCell::new(ChaCha20Rng::seed_from_u64(0)));
     let get_rand_txid = || {
         let mut bytes = [0u8; 20];
@@ -158,7 +159,7 @@ pub fn simulation_test_with_policy<T: CovenantProgram>(
         if deposit_input.is_some() {
             new_balance += 123_456_000;
         }
-        
+
         // test for the fee
         let fee = {
             let info = CovenantInput {
@@ -174,7 +175,8 @@ pub fn simulation_test_with_policy<T: CovenantProgram>(
             let (tx_template, _) = get_tx::<T>(&info, id, &old_state, &new_state, &input);
             db.calculate_fees(&tx_template.tx, &policy).unwrap()
         };
-        
+        total_fees += fee.to_sat();
+
         new_balance -= fee.to_sat() as u64; // as for transaction fee
         new_balance -= DUST_AMOUNT;
 
@@ -215,6 +217,8 @@ pub fn simulation_test_with_policy<T: CovenantProgram>(
             .get(1)
             .and_then(|x| Some(x.previous_output.clone()));
     }
+
+    total_fees
 }
 
 /// Run simulation test.
