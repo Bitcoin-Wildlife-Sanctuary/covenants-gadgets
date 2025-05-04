@@ -19,8 +19,6 @@ use std::rc::Rc;
 pub struct SimulationInstruction<T: CovenantProgram> {
     /// The index of the program to be executed.
     pub program_index: usize,
-    /// The fee to reserve for the transaction fee.
-    pub fee: usize,
     /// The program input.
     pub program_input: T::Input,
 }
@@ -154,14 +152,30 @@ pub fn simulation_test_with_policy<T: CovenantProgram>(
         let SimulationInstruction::<T> {
             program_index: id,
             program_input: input,
-            fee,
         } = next_step.unwrap();
 
         let mut new_balance = old_balance;
         if deposit_input.is_some() {
             new_balance += 123_456_000;
         }
-        new_balance -= fee as u64; // as for transaction fee
+        
+        // test for the fee
+        let fee = {
+            let info = CovenantInput {
+                old_randomizer,
+                old_balance,
+                old_txid: old_txid.clone(),
+                input_outpoint1: old_tx_outpoint1.clone(),
+                input_outpoint2: old_tx_outpoint2.clone(),
+                optional_deposit_input: deposit_input.clone(),
+                new_balance: 0,
+            };
+            let new_state = T::run(id, &old_state, &input).unwrap();
+            let (tx_template, _) = get_tx::<T>(&info, id, &old_state, &new_state, &input);
+            db.calculate_fees(&tx_template.tx, &policy).unwrap()
+        };
+        
+        new_balance -= fee.to_sat() as u64; // as for transaction fee
         new_balance -= DUST_AMOUNT;
 
         let info = CovenantInput {

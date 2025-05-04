@@ -166,7 +166,6 @@ mod test {
             };
             Some(SimulationInstruction::<CounterProgram> {
                 program_index: id,
-                fee: 3000,
                 program_input: input,
             })
         };
