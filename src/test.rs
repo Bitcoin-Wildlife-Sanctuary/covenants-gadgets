@@ -25,13 +25,12 @@ pub struct SimulationInstruction<T: CovenantProgram> {
     pub program_input: T::Input,
 }
 
-/// Run simulation test.
-pub fn simulation_test<T: CovenantProgram>(
+/// Run simulation test with policy
+pub fn simulation_test_with_policy<T: CovenantProgram>(
     repeat: usize,
     test_generator: &mut impl FnMut(&T::State) -> Option<SimulationInstruction<T>>,
+    policy: &Policy,
 ) {
-    let policy = Policy::default().set_fee(7).set_max_tx_weight(400000);
-
     let prng = Rc::new(RefCell::new(ChaCha20Rng::seed_from_u64(0)));
     let get_rand_txid = || {
         let mut bytes = [0u8; 20];
@@ -202,4 +201,13 @@ pub fn simulation_test<T: CovenantProgram>(
             .get(1)
             .and_then(|x| Some(x.previous_output.clone()));
     }
+}
+
+/// Run simulation test.
+pub fn simulation_test<T: CovenantProgram>(
+    repeat: usize,
+    test_generator: &mut impl FnMut(&T::State) -> Option<SimulationInstruction<T>>,
+) {
+    let policy = Policy::default().set_fee(7).set_max_tx_weight(400000);
+    simulation_test_with_policy(repeat, test_generator, &policy);
 }
